@@ -6,8 +6,9 @@ import moment from 'moment'
 import axios from 'axios'
 import twitch_emotes from './twitch_emotes'
 import bttv_emotes from './bttv_emotes'
-import Toggle from 'material-ui/Toggle';
+
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
+import FlatButton from 'material-ui/FlatButton';
 
 const oauth = 'ntzeiqkoi1nubmv2f4kxlieu27z7mb'
 const client_id = 'gpa5zi9y5d70q9b2lcpcwvikp7mek0'
@@ -25,7 +26,7 @@ for (let i = 0; i < bttv_emotes.length; i++) {
 // http://static-cdn.jtvnw.net/emoticons/v1/356/3.0
 // http://cdn.betterttv.net/emote/{{id}}/{{image}}
 
-let channels = ['#Maurice_33', '#Go1den']
+let channels = ['#Maurice_33', '#TheBoyks']
 
 let options = {
   options: {
@@ -70,49 +71,58 @@ class ChannelManager extends Component {
     super(props)
 
     this.state = {
-      channels: props.client.channels.map((channel) =>
-        <div key={channel}>
-          {channel}
-        </div>
-      )
+      channels: new Map()
     }
   }
 
   componentDidMount() {
+    // let new_channels = this.state.channels
+    // this.props.client.channels.map((channel) => {
+    //   new_channels.set(channel, 
+    //     <div key={channel}>
+    //       {channel}
+    //     </div>
+    //   )
+    // })
+
+    // this.setState({
+    //   channels: new_channels
+    // })
+
     client.on("join", (channel, username, self) => {
-      if (username === options.identity.username) {
-        console.log(`${username} has joined ${channel}!`)
+      if (username === client.username) {
+        let new_channels = this.state.channels
+        new_channels.set(channel,
+          <div key={channel}>
+            {channel}
+          </div>
+        )
         this.setState({
-          channels: this.state.channels.concat(
-            <div key={channel}>
-              {channel}
-            </div>
-          )
+          channels: new_channels
         })
       }
-    });
-  }
+    })
 
-  join(channel) {
-    this.props.client.join(channel).then((data) => {
-      console.log(`${this.props.client.username} has joined the ${data}`)
-    }).catch(function (err) {
-      console.error(err)
-    });
-  }
-
-  leave(channel) {
-    this.props.client.part(channel).then((data) => {
-      console.log(`${this.props.client.username} has left the ${data}`)
-    }).catch(function (err) {
-      console.error(err)
-    });
+    client.on("part", (channel, username, self) => {
+      if (username === client.username) {
+        let new_channels = this.state.channels
+        new_channels.set(channel,
+          <div key={channel}>
+            {channel}
+          </div>
+        )
+        this.setState({
+          channels: new_channels
+        })
+      }
+    })
   }
 
   render() {
+    let html = Array.from(this.state.channels.values())
     return (
       <div style={ChannelManagerCSS.container}>
-        {this.state.channels}
+        {html}
       </div>
     )
   }
@@ -132,25 +142,36 @@ class FollowedStreams extends Component {
     super(props)
 
     this.state = {
-      streams: [],
+      streams: new Map(),
       channels: new Map()
     }
   }
 
   componentDidMount() {
-    this.updateStreamers()
+    console.log(this.props.client)
+    // Update current channels from client
+    this.props.client.channels.map((channel) => {
+      let updated_channels = this.state.channels.set(channel, true)
+      this.setState({
+        channels: updated_channels
+      })
+      return true
+    })
+    // console.log(`${a} ${moment().format('h:mm:ss:SSS')}`)
+    // Listeners
     client.on("join", (channel, username, self) => {
       if (username === options.identity.username) {
         console.log(`${username} has joined ${channel}!`)
-        let new_channels = this.state.channels.set(channel, true)
+        let updated_channels = this.state.channels.set(channel, true)
         this.setState({
-          channels: new_channels
+          channels: updated_channels
         })
+        this.updateStreamers()
       }
     });
   }
 
-  updateStreamers() {
+  async updateStreamers() {
     let config = {
       url: 'streams/followed',
       method: 'get',
@@ -159,36 +180,68 @@ class FollowedStreams extends Component {
       params: { limit: 100 }
     }
 
-    axios.request(config)
+    const a = await axios.request(config)
       .then((response) => {
         // console.log(response.data.streams)
-        let new_channels = this.state.channels
-        let new_streams = []
+        let new_streams = this.state.streams
         response.data.streams.map((stream) => {
-          new_channels.set(`#${stream.channel.display_name}`, false)
-          new_channels.get(`#${stream.channel.display_name}`) ? new_channels.set(`#${stream.channel.display_name}`, true) : new_channels.set(`#${stream.channel.display_name}`, false)
-          new_streams.push(
+          new_streams.set(
+            `#${stream.channel.display_name}`,
             <div style={FollowedStreamsCSS.element} key={stream._id}>
               <div style={FollowedStreamsCSS.streamerName}>#{stream.channel.display_name}</div>
               <div style={FollowedStreamsCSS.gameName}>{stream.game}</div>
               <div style={FollowedStreamsCSS.viewers}>{stream.viewers}</div>
-              <Toggle />
+              {(this.state.channels.get(`#${stream.channel.display_name.toLowerCase()}`) === true) ?
+                <FlatButton label='Leave' onClick={this.leave.bind(this, `#${stream.channel.display_name.toLowerCase()}`)} /> :
+                <FlatButton label='Join' onClick={this.join.bind(this, `#${stream.channel.display_name.toLowerCase()}`)} />}
             </div>
           )
+          return true
         })
-  
+
         this.setState({
-            streams: new_streams,
-            channels: new_channels
-          })
+          streams: new_streams,
+        })
+        // console.log(`a ${moment().format('h:mm:ss:SSS')}`)
+        return true
       })
+    return a
+  }
+
+  join(channel) {
+    this.props.client.join(channel).then((data) => {
+      let updated_channels = this.state.channels.set(channel, true)
+      this.setState({
+        channels: updated_channels
+      })
+      console.log(this.state.channels)
+      console.log(`${this.props.client.username} has joined ${data}`)
+      this.updateStreamers()
+    }).catch(function (err) {
+      console.error(err)
+    });
+  }
+
+  leave(channel) {
+    this.props.client.part(channel).then((data) => {
+      let updated_channels = this.state.channels.set(channel, false)
+      this.setState({
+        channels: updated_channels
+      })
+      console.log(this.state.channels)
+      console.log(`${this.props.client.username} has left ${data}`)
+      this.updateStreamers()
+    }).catch(function (err) {
+      console.error(err)
+    });
   }
 
   render() {
+    let html = Array.from(this.state.streams.values())
     return (
       <div style={FollowedStreamsCSS.container}>
         <button onClick={this.updateStreamers.bind(this)}>Refresh</button>
-        {this.state.streams}
+        {html}
       </div>
     )
   }
