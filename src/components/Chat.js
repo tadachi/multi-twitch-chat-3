@@ -6,7 +6,7 @@ import twitch_emotes from '../emotes/twitch_emotes'
 import bttv_emotes from '../emotes/bttv_emotes'
 
 import '../App.css'
-import {List, ListItem} from 'material-ui/List';
+import { List, ListItem } from 'material-ui/List';
 
 // Emotes
 // http://static-cdn.jtvnw.net/emoticons/v1/356/3.0
@@ -24,9 +24,13 @@ for (let i = 0; i < bttv_emotes.length; i++) {
 class Chat extends Component {
   constructor(props) {
     super(props)
-    
+
     this.state = {
       messages: [],
+      scrollToEnd: true,
+      end: <div style={{ float: "left", clear: "both" }}
+        ref={(el) => { this.messagesEnd = el; }}>
+      </div>
     }
   }
 
@@ -36,18 +40,20 @@ class Chat extends Component {
       let m = `<span style="opacity: 0.8; font-size: 10px; font-weight: bold;">${moment().format('h:mm:ss')} ${channel}</span>
         <span style="color: ${userstate['color']}"> ${userstate['display-name']}</span>:
                 ${component.parseForEmotes(message)}`
-      console.log(m)
+      // console.log(m)
       const backgroundColor = { backgroundColor: this.props.channels.get(channel).color }
-      console.log(component.state)
+
       let new_messages = component.state.messages
+
       new_messages.push(
-        <ListItem style={{...ChatCSS.line,...backgroundColor}} channel={channel} key={component.state.messages.length}>
+        <div style={{ ...ChatCSS.line, ...backgroundColor }} channel={channel} key={component.state.messages.length}>
           {ReactHtmlParser(m)}
-        </ListItem>
+        </div>
       )
       component.setState({
         messages: new_messages
       })
+      component.scrollToBottom()
     });
   }
 
@@ -66,11 +72,27 @@ class Chat extends Component {
     return split_message.join(' ');
   }
 
+  scrollToBottom() {
+    if (this.state.scrollToEnd) {
+      const last = this.state.messages.length - 1
+      // console.log(last)
+      // console.log(this.state.messages.length)
+      // console.log(this.state.messages[last])
+      // this.state.messages[last].key.scrollIntoView({ behavior: "smooth" })
+      // console.log('test')
+      this.messagesEnd.scrollIntoView({ behavior: "smooth" })
+    }
+  }
+
   render() {
     return (
-      <List style={ChatCSS.container} className={'scrollbar'} id={'style-3'}>
-        {this.state.messages}
-      </List>
+      <div style={ChatCSS.container} className={'scrollbar'} id={'style-3'}>
+        <div>
+          {this.state.messages}
+        </div>
+        <div ref={(el) => { this.messagesEnd = el; }}>
+        </div>
+      </div>
     )
   }
 }
@@ -80,7 +102,6 @@ Chat.defaultProps = {
   twitch_emotes_map: twitch_emotes_map,
   bttv_emotes_map: bttv_emotes_map
 };
-
 
 let ChatCSS = {
   container: {

@@ -6,7 +6,7 @@ class Clock extends Component {
   constructor(props) {
     super(props)
 
-    this.state = { date: moment().format('h:mm:ss') }
+    this.state = { date: moment().format('h:mm:ss A') }
   }
 
   componentDidMount() {
@@ -24,7 +24,7 @@ class Clock extends Component {
   tick() {
 
     this.setState({
-      date: moment().format('h:mm:ss')
+      date: moment().format('h:mm:ss A')
     })
   }
 
