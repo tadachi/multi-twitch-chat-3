@@ -30,7 +30,7 @@ class ChannelManager extends Component {
 
     this.timerID = setInterval(
       () => this.updateStreamers(),
-      10000
+      60000
     )
   }
 

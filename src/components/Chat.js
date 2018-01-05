@@ -27,6 +27,7 @@ class Chat extends Component {
 
     this.state = {
       messages: [],
+      your_messages: [],
       scrollToEnd: true,
       end: <div style={{ float: "left", clear: "both" }}
         ref={(el) => { this.messagesEnd = el; }}>
@@ -35,6 +36,8 @@ class Chat extends Component {
   }
 
   componentDidMount() {
+    this.chatScroll.addEventListener('scroll', this.handleChatScroll.bind(this))
+    // document.getElementById('chat').addEventListener('scroll', this.handleChatScroll)
     let component = this
     this.props.client.on("chat", (channel, userstate, message, self) => {
       let m = `<span style="opacity: 0.8; font-size: 10px; font-weight: bold;">${moment().format('h:mm:ss')} ${channel}</span>
@@ -50,11 +53,20 @@ class Chat extends Component {
           {ReactHtmlParser(m)}
         </div>
       )
+
       component.setState({
         messages: new_messages
       })
-      component.scrollToBottom()
+
+      if (this.state.scrollToEnd) {
+        component.scrollToBottom()
+      }
     });
+  }
+
+  componentWillUnmount() {
+    this.chatScroll.removeEventListener('scroll', this.handleChatScroll.bind(this))
+    // document.getElementById('chat').removeEventListener('scroll', this.handleChatScroll)
   }
 
   parseForEmotes(message) {
@@ -73,25 +85,54 @@ class Chat extends Component {
   }
 
   scrollToBottom() {
-    if (this.state.scrollToEnd) {
-      const last = this.state.messages.length - 1
-      // console.log(last)
-      // console.log(this.state.messages.length)
-      // console.log(this.state.messages[last])
-      // this.state.messages[last].key.scrollIntoView({ behavior: "smooth" })
-      // console.log('test')
-      this.messagesEnd.scrollIntoView({ behavior: "smooth" })
+    this.messagesEnd.scrollIntoView({ behavior: "instant" })
+  }
+
+  handleChatScroll() {
+    if (this.chatScroll.scrollHeight - this.chatScroll.scrollTop === this.chatScroll.clientHeight) {
+      this.setState({
+        scrollToEnd: true
+      })
+      this.scrollToBottom()
+    } else {
+      if (this.state.scrollToEnd !== false) {
+        this.setState({
+          scrollToEnd: false
+        })
+      }
     }
   }
 
   render() {
+    // const isScrollToEnd = this.state.scrollToEnd
+
+    // let scrollToEndButton = null;
+    // if (!isScrollToEnd && ) {
+    //   scrollToEndButton =
+    //     <div style={ChatCSS.moreMessagesBelow} onClick={this.scrollToBottom.bind(this)} ref={(el) => { this.moreMessagesBelow = el; }} id={'moreMessagesBelow'}>
+    //       More Messages Below.
+    //     </div>
+    // } else {
+    //   scrollToEndButton = null
+    // }
+
     return (
-      <div style={ChatCSS.container} className={'scrollbar'} id={'style-3'}>
-        <div>
-          {this.state.messages}
+      <div style={ChatCSS.container}>
+        <div style={ChatCSS.chat} ref={(el) => { this.chatScroll = el; }} className={'scrollbar'} id={'chat'}>
+          <div>
+            {this.state.messages}
+          </div>
+          <div id={'endOfChat'} ref={(el) => { this.messagesEnd = el; }}>
+          </div>
         </div>
-        <div ref={(el) => { this.messagesEnd = el; }}>
-        </div>
+        {(this.state.scrollToEnd === false) ?
+          <div style={ChatCSS.moreMessagesBelow} onClick={this.scrollToBottom.bind(this)} ref={(el) => { this.moreMessagesBelow = el; }} id={'moreMessagesBelow'}>
+            <div style={{ display: 'inline-block', verticalAlign: 'middle', opacity: '1.0'}}>More Messages Below.</div>
+          </div> :
+          <div></div>
+        }
+
+        <textarea placeholder="Send a message.." style={ChatCSS.chatInput}></textarea>
       </div>
     )
   }
@@ -103,18 +144,56 @@ Chat.defaultProps = {
   bttv_emotes_map: bttv_emotes_map
 };
 
+const w = 300
+const h = 500
+const mMB = 20
+const cI = 40
+const p = 40
+
 let ChatCSS = {
   container: {
-    width: 'auto',
-    height: '300px',
-    // marginLeft: '10px',
-    // marginBottom: '10px',
+    position: 'relative',
+    width: `${w}px`,
+    height: `${h}px`,
+    padding: `${p}px ${p}px ${p}px ${p}px`,
+    border: '1px solid DimGrey',
+  },
+  chat: {
+    width: 'inherit',
+    height: `${h - cI}px`,
     backgroundColor: 'black',
-    overflowY: 'scroll'
+    overflowY: 'scroll',
   },
   line: {
+    paddingTop: '5px',
+    paddingBottom: '5px',
     // border: '1px solid white',
     wordWrap: 'break-word',
+  },
+  moreMessagesBelow: {
+    display: 'inline-block',
+    position: 'absolute',
+    top: `${h - mMB - 10}px`,
+    left: `${p}px`,
+    right: '0',
+    bottom: '0',
+    width: `${w - 2}px`,
+    height: '20px',
+    opacity: '.45',
+    backgroundColor: 'black',
+    border: '1px solid DimGrey',
+    color: 'white',
+    textAlign: 'center',
+  },
+  chatInput: {
+    verticalAlign: 'top', // Fixes extra 6px gap
+    width: `${w - 6}px`,
+    height: '40px',
+    overflow: 'hidden',
+    resize: 'none',
+    backgroundColor: 'black',
+    color: 'white',
+    border: '1px solid DimGrey',
   }
 }
 
