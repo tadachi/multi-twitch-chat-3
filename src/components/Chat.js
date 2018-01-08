@@ -5,8 +5,11 @@ import moment from 'moment'
 import twitch_emotes from '../emotes/twitch_emotes'
 import bttv_emotes from '../emotes/bttv_emotes'
 
+import DropDownMenu from 'material-ui/DropDownMenu';
+import MenuItem from 'material-ui/MenuItem';
+
 import '../App.css'
-import { List, ListItem } from 'material-ui/List';
+// import { List, ListItem } from 'material-ui/List';
 
 // Emotes
 // http://static-cdn.jtvnw.net/emoticons/v1/356/3.0
@@ -29,34 +32,32 @@ class Chat extends Component {
       messages: [],
       your_messages: [],
       scrollToEnd: true,
-      end: <div style={{ float: "left", clear: "both" }}
-        ref={(el) => { this.messagesEnd = el; }}>
-      </div>
+      channel: 0
     }
+    this.channel_counter = 0
+    this.regex_channel = /\/\#\S+|\S+\ +/ //['/#Tod', /#Tod    '] OK ['#Tod', '#Tod  '] Not OK.
   }
 
   componentDidMount() {
     this.chatScroll.addEventListener('scroll', this.handleChatScroll.bind(this))
-    // document.getElementById('chat').addEventListener('scroll', this.handleChatScroll)
     let component = this
+
+    this.props.client.on("part", (channel, username, self) => {
+      this.forceUpdate()
+    });
+
+    this.props.client.on("join", (channel, username, self) => {
+      if (username === this.props.client.username) {
+        this.forceUpdate()
+      }
+    });
+
     this.props.client.on("chat", (channel, userstate, message, self) => {
       let m = `<span style="opacity: 0.8; font-size: 10px; font-weight: bold;">${moment().format('h:mm:ss')} ${channel}</span>
         <span style="color: ${userstate['color']}"> ${userstate['display-name']}</span>:
                 ${component.parseForEmotes(message)}`
       // console.log(m)
-      const backgroundColor = { backgroundColor: this.props.channels.get(channel).color }
-
-      let new_messages = component.state.messages
-
-      new_messages.push(
-        <div style={{ ...ChatCSS.line, ...backgroundColor }} channel={channel} key={component.state.messages.length}>
-          {ReactHtmlParser(m)}
-        </div>
-      )
-
-      component.setState({
-        messages: new_messages
-      })
+      component.processMessage(channel, m)
 
       if (this.state.scrollToEnd) {
         component.scrollToBottom()
@@ -66,7 +67,30 @@ class Chat extends Component {
 
   componentWillUnmount() {
     this.chatScroll.removeEventListener('scroll', this.handleChatScroll.bind(this))
-    // document.getElementById('chat').removeEventListener('scroll', this.handleChatScroll)
+  }
+
+  processMessage(channel, message) {
+    let backgroundColor = 'black'
+
+    if (this.props.channels.get(channel)) {
+      backgroundColor = { backgroundColor: this.props.channels.get(channel).color }
+    }
+
+    let new_messages = this.state.messages
+
+    new_messages.push(
+      <div style={{ ...ChatCSS.line, ...backgroundColor }} channel={channel} key={this.state.messages.length}>
+        {ReactHtmlParser(message)}
+      </div>
+    )
+
+    this.setState({
+      messages: new_messages
+    })
+  }
+
+  parse(message) {
+    return message.replace(this.regex_channel, '') // Remove the '/#Macaw45', '/#Landail' etc from the message
   }
 
   parseForEmotes(message) {
@@ -84,8 +108,80 @@ class Chat extends Component {
     return split_message.join(' ');
   }
 
+  parseForChannel(message) {
+    const m = message.match(this.regex_channel)
+    if (m) {
+      return m[0].substr(1)
+    }
+    return m
+  }
+
   scrollToBottom() {
     this.messagesEnd.scrollIntoView({ behavior: "instant" })
+  }
+
+  sendMessage(event) {
+    const message = this.messageInput.value
+    let channel = ''
+    let new_your_messages = this.state.your_messages
+    let parsedMessage = ''
+
+    if (event.key === 'Enter') {
+      event.preventDefault() // Prevents newlines from occuring in the text area
+
+      if (message === '') { return }
+      channel = this.parseForChannel(message)
+      if (channel === '#' || channel === undefined) { return }
+      parsedMessage = this.parseForEmotes(message)
+
+      let m = `<span style="opacity: 0.8; font-size: 10px; font-weight: bold;">${moment().format('h:mm:ss')} ${channel}</span>
+        <span style="color: ${'white'}"> ${this.props.client.getUserName}</span>:
+        ${parsedMessage}`
+
+      if (parsedMessage !== '') {
+        new_your_messages.push(parsedMessage)
+        this.setState({
+          your_messages: new_your_messages
+        })
+      }
+
+      this.props.client.say(channel, this.parse(message)).then(function (data) {
+        console.log(`${channel} ${this.parse(message)}`)
+      }).catch(function (err) {
+        console.log(err)
+      });
+
+      this.messageInput.value = ''
+      console.log(this.state)
+      return
+    }
+  }
+
+  switchChannel(event) {
+    // this.last_message = this.messageInput.value
+    let temp_channels_array = Array.from(this.props.channels.keys())
+    let temp_channels_joined = Array.from(this.props.channels.values())
+    let channel = ''
+    if (event.key === 'ArrowUp') {
+      console.log(this.channel_counter)
+      if (temp_channels_array.length !== temp_channels_joined.length) {
+        throw Error('Channels length and joined are not aligned.')
+      }
+      if (temp_channels_array.length <= 0 || temp_channels_array.length <= 0) { return }
+      if (this.channel_counter >= temp_channels_array.length) {
+        this.channel_counter = 0
+      }
+      if (temp_channels_joined[this.channel_counter].joined === true) {
+        channel = temp_channels_array[this.channel_counter]
+        this.messageInput.value = `/${channel} `
+      } else {
+        this.messageInput = ''
+      }
+
+      this.channel_counter += 1
+      return
+    }
+
   }
 
   handleChatScroll() {
@@ -103,36 +199,39 @@ class Chat extends Component {
     }
   }
 
+  handleChange = (event, index, value) => this.setState({channel: value});
+
   render() {
-    // const isScrollToEnd = this.state.scrollToEnd
-
-    // let scrollToEndButton = null;
-    // if (!isScrollToEnd && ) {
-    //   scrollToEndButton =
-    //     <div style={ChatCSS.moreMessagesBelow} onClick={this.scrollToBottom.bind(this)} ref={(el) => { this.moreMessagesBelow = el; }} id={'moreMessagesBelow'}>
-    //       More Messages Below.
-    //     </div>
-    // } else {
-    //   scrollToEndButton = null
-    // }
-
+    const channels = Array.from(this.props.channels.keys()).sort() //['#destiny', '#twitchpresents', '#agdqmarathon'] sorts to ['#agdqmarathon', '#twitchpresents', #destiny]
+    let joined_channels = []
+    for (let i = 0; i < channels.length; i++) {
+      if (this.props.channels.get(channels[i]).joined === true) {
+        joined_channels.push(<MenuItem value={i} key={i} primaryText={channels[i]} />)
+      }
+    }
     return (
       <div style={ChatCSS.container}>
-        <div style={ChatCSS.chat} ref={(el) => { this.chatScroll = el; }} className={'scrollbar'} id={'chat'}>
+        <div style={ChatCSS.chat} ref={(el) => { this.chatScroll = el }} className={'scrollbar'} id={'chat'}>
           <div>
             {this.state.messages}
           </div>
-          <div id={'endOfChat'} ref={(el) => { this.messagesEnd = el; }}>
+          <div id={'endOfChat'} ref={(el) => { this.messagesEnd = el }}>
           </div>
         </div>
+        {(channels.length > 0) ?
+          <DropDownMenu style={ChatCSS.dropDown} listStyle={{padding:'0', margin: '0'}} value={this.state.channel} onChange={this.handleChange}>
+            {joined_channels}
+          </DropDownMenu> :
+          <div></div>
+        }
         {(this.state.scrollToEnd === false) ?
           <div style={ChatCSS.moreMessagesBelow} onClick={this.scrollToBottom.bind(this)} ref={(el) => { this.moreMessagesBelow = el; }} id={'moreMessagesBelow'}>
-            <div style={{ display: 'inline-block', verticalAlign: 'middle', opacity: '1.0'}}>More Messages Below.</div>
+            <div style={{ display: 'inline-block', verticalAlign: 'middle', opacity: '1.0' }}>More Messages Below.</div>
           </div> :
           <div></div>
         }
-
-        <textarea placeholder="Send a message.." style={ChatCSS.chatInput}></textarea>
+        <textarea ref={(el) => { this.messageInput = el }} placeholder="Send a message.." style={ChatCSS.chatInput} onKeyPress={this.sendMessage.bind(this)} onKeyDown={this.switchChannel.bind(this)}>
+        </textarea>
       </div>
     )
   }
@@ -148,7 +247,8 @@ const w = 300
 const h = 500
 const mMB = 20
 const cI = 40
-const p = 40
+const p = 20
+const dD = 70
 
 let ChatCSS = {
   container: {
@@ -160,9 +260,10 @@ let ChatCSS = {
   },
   chat: {
     width: 'inherit',
-    height: `${h - cI}px`,
+    height: `${h - cI - dD}px`,
     backgroundColor: 'black',
     overflowY: 'scroll',
+    border: '1px solid DimGrey',
   },
   line: {
     paddingTop: '5px',
@@ -173,7 +274,7 @@ let ChatCSS = {
   moreMessagesBelow: {
     display: 'inline-block',
     position: 'absolute',
-    top: `${h - mMB - 10}px`,
+    top: `${h - mMB - p - 10 - dD}px`,
     left: `${p}px`,
     right: '0',
     bottom: '0',
@@ -187,13 +288,21 @@ let ChatCSS = {
   },
   chatInput: {
     verticalAlign: 'top', // Fixes extra 6px gap
-    width: `${w - 6}px`,
+    width: `${w}px`,
     height: '40px',
     overflow: 'hidden',
     resize: 'none',
     backgroundColor: 'black',
     color: 'white',
     border: '1px solid DimGrey',
+    padding: 0,
+    margin: 0,
+  },
+  dropDown: {
+    backgroundColor: 'white',
+    width: `${w/2}px`,
+    padding: 0,
+    marginTop: '10px',
   }
 }
 

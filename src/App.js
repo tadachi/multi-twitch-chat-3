@@ -22,7 +22,7 @@ let options = {
   identity: {
     username: 'tak_ada',
     password: 'oauth:ntzeiqkoi1nubmv2f4kxlieu27z7mb'
-  }
+  },
 }
 
 let client = new tmi.client(options)
@@ -31,6 +31,10 @@ client.connect()
 
 client.on("connected", function (address, port) {
   console.log(address + ':' + port)
+});
+
+client.on("disconnected", (reason) => {
+  console.log(`disconnected from server. Reason: ${reason}`)
 });
 
 // App.js

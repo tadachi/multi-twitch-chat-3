@@ -12,7 +12,8 @@ class ChannelManager extends Component {
     super(props)
 
     this.state = {
-      streams: new Map()
+      streams: new Map(),
+      responseCache: null
     }
   }
 
@@ -24,14 +25,18 @@ class ChannelManager extends Component {
     this.props.client.on("join", (channel, username, self) => {
       if (username === this.props.client.username) {
         console.log(`${username} has joined ${channel}!`)
-        this.updateStreamers()
       }
     });
 
     this.timerID = setInterval(
       () => this.updateStreamers(),
-      60000
+      300000
     )
+
+    setTimeout(() => {
+      this.join('#TwitchPresents'.toLowerCase())
+      this.join('#landail'.toLowerCase())
+    }, 4000)
   }
 
   componentWillUnmount() {
@@ -50,11 +55,16 @@ class ChannelManager extends Component {
     const req = await axios.request(config)
       .then((response) => {
 
-        let new_streams = this.state.streams
+        this.setState({
+          responseCache: response,
+        })
+
+        let new_streams = new Map()
 
         response.data.streams.map((stream) => {
           let joined = false
           let color = { backgroundColor: '#000000' } // Default is black
+
           if (this.props.channels.has(`#${stream.channel.display_name.toLowerCase()}`)) {
             const ch = this.props.channels.get(`#${stream.channel.display_name.toLowerCase()}`)
             joined = ch.joined
@@ -63,9 +73,11 @@ class ChannelManager extends Component {
 
           new_streams.set(
             `#${stream.channel.display_name}`,
-            <ListItem style={{...ChannelManagerCSS.element,...color}} key={stream._id}>
+            <ListItem style={{ ...ChannelManagerCSS.element, ...color }} key={stream._id}>
               <div style={ChannelManagerCSS.streamerName}>#{stream.channel.display_name}</div>
-              <div style={ChannelManagerCSS.gameName}>{stream.game}</div>
+              {(stream.game !== '' && stream.game !== undefined) ?
+                <div style={ChannelManagerCSS.gameName}>{stream.game}</div> :
+                <div style={ChannelManagerCSS.gameName}>N/A</div>}
               <div style={ChannelManagerCSS.viewers}>{stream.viewers}</div>
               {(joined === true) ?
                 <FlatButton label='Leave' secondary={true} onClick={this.leave.bind(this, `#${stream.channel.display_name.toLowerCase()}`)} /> :
@@ -84,12 +96,46 @@ class ChannelManager extends Component {
     return req
   }
 
+  updateStreamersByCache() {
+    let new_streams = new Map()
+
+    if (this.state.responseCache) {
+      this.state.responseCache.data.streams.map((stream) => {
+        let joined = false
+        let color = { backgroundColor: '#000000' } // Default is black
+
+        if (this.props.channels.has(`#${stream.channel.display_name.toLowerCase()}`)) {
+          const ch = this.props.channels.get(`#${stream.channel.display_name.toLowerCase()}`)
+          joined = ch.joined
+          joined === true ? color.backgroundColor = ch.color : color.backgroundColor = '#000000'
+        }
+
+        new_streams.set(
+          `#${stream.channel.display_name}`,
+          <ListItem style={{ ...ChannelManagerCSS.element, ...color }} key={stream._id}>
+            <div style={ChannelManagerCSS.streamerName}>#{stream.channel.display_name}</div>
+            <div style={ChannelManagerCSS.gameName}>{stream.game}</div>
+            <div style={ChannelManagerCSS.viewers}>{stream.viewers}</div>
+            {(joined === true) ?
+              <FlatButton label='Leave' secondary={true} onClick={this.leave.bind(this, `#${stream.channel.display_name.toLowerCase()}`)} /> :
+              <FlatButton label='Join' primary={true} onClick={this.join.bind(this, `#${stream.channel.display_name.toLowerCase()}`)} />}
+          </ListItem>
+        )
+
+        this.setState({
+          streams: new_streams,
+        })
+
+      })
+    }
+  }
+
   join(channel) {
     this.props.client.join(channel).then((data) => {
 
       this.props.dispatch(joinChannel(channel))
 
-      this.updateStreamers()
+      this.updateStreamersByCache()
 
     }).catch(function (err) {
       console.error(err)
