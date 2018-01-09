@@ -7,6 +7,10 @@ import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
 import ChannelManager from './components/ChannelManager'
 import Clock from './components/Clock'
 import Chat from './components/Chat'
+import ColorPickerGrid from './components/ColorPickerGrid'
+
+import EventEmitter from 'wolfy87-eventemitter'
+import moment from 'moment'
 
 const oauth = 'ntzeiqkoi1nubmv2f4kxlieu27z7mb'
 // const client_id = 'gpa5zi9y5d70q9b2lcpcwvikp7mek0'
@@ -37,7 +41,28 @@ client.on("disconnected", (reason) => {
   console.log(`disconnected from server. Reason: ${reason}`)
 });
 
-// App.js
+// Multi-twitch-chat 3 event system (mtc)
+
+let MultiTwitchChatEE = new EventEmitter()
+
+function updateStreamersByCacheEvent() {
+  console.log(`[${moment().format('h:mm:ss A')}] Updated streamers list by cache.`);
+}
+
+function updateStreamersEvent() {
+  console.log(`[${moment().format('h:mm:ss A')}] Updated streamers by network.`);
+}
+
+MultiTwitchChatEE.addListener('updateStreamersByCacheEvent', updateStreamersByCacheEvent);
+MultiTwitchChatEE.addListener('updateStreamersByNetworkEvent', updateStreamersEvent);
+
+/*
+updateStreamersByCacheEvent
+updateStreamersByNetworkEvent
+joinChannelEvent
+leaveChannelEvent
+*/
+
 class App extends Component {
 
   render() {
@@ -45,14 +70,17 @@ class App extends Component {
       <div className="App">
         <Clock />
         <MuiThemeProvider>
-          <ChannelManager client={client} oauth={oauth} />
+          <ChannelManager client={client} oauth={oauth} mtcEE={MultiTwitchChatEE} />
         </MuiThemeProvider>
         <MuiThemeProvider>
-          <Chat client={client} />
+          <Chat client={client} mtcEE={MultiTwitchChatEE}/>
         </MuiThemeProvider>
+        <ColorPickerGrid>
+        </ColorPickerGrid>
       </div>
     )
   }
 }
+
 
 export default App;

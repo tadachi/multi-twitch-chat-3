@@ -34,7 +34,7 @@ class Chat extends Component {
       scrollToEnd: true,
       channel: 0
     }
-    this.channel_counter = 0
+    this.last_channel_used = ''
     this.regex_channel = /\/\#\S+|\S+\ +/ //['/#Tod', /#Tod    '] OK ['#Tod', '#Tod  '] Not OK.
   }
 
@@ -42,17 +42,21 @@ class Chat extends Component {
     this.chatScroll.addEventListener('scroll', this.handleChatScroll.bind(this))
     let component = this
 
-    this.props.client.on("part", (channel, username, self) => {
-      this.forceUpdate()
-    });
-
-    this.props.client.on("join", (channel, username, self) => {
+    this.props.client.on('join', (channel, username, self) => {
       if (username === this.props.client.username) {
-        this.forceUpdate()
+        this.setState({
+          channel: 0
+        })
       }
     });
 
-    this.props.client.on("chat", (channel, userstate, message, self) => {
+    this.props.client.on('part', (channel, username, self) => {
+      this.setState({
+        channel: 0
+      })
+    });
+
+    this.props.client.on('chat', (channel, userstate, message, self) => {
       let m = `<span style="opacity: 0.8; font-size: 10px; font-weight: bold;">${moment().format('h:mm:ss')} ${channel}</span>
         <span style="color: ${userstate['color']}"> ${userstate['display-name']}</span>:
                 ${component.parseForEmotes(message)}`
@@ -158,30 +162,12 @@ class Chat extends Component {
   }
 
   switchChannel(event) {
-    // this.last_message = this.messageInput.value
     let temp_channels_array = Array.from(this.props.channels.keys())
     let temp_channels_joined = Array.from(this.props.channels.values())
     let channel = ''
     if (event.key === 'ArrowUp') {
       console.log(this.channel_counter)
-      if (temp_channels_array.length !== temp_channels_joined.length) {
-        throw Error('Channels length and joined are not aligned.')
-      }
-      if (temp_channels_array.length <= 0 || temp_channels_array.length <= 0) { return }
-      if (this.channel_counter >= temp_channels_array.length) {
-        this.channel_counter = 0
-      }
-      if (temp_channels_joined[this.channel_counter].joined === true) {
-        channel = temp_channels_array[this.channel_counter]
-        this.messageInput.value = `/${channel} `
-      } else {
-        this.messageInput = ''
-      }
-
-      this.channel_counter += 1
-      return
     }
-
   }
 
   handleChatScroll() {
@@ -218,18 +204,14 @@ class Chat extends Component {
           <div id={'endOfChat'} ref={(el) => { this.messagesEnd = el }}>
           </div>
         </div>
-        {(channels.length > 0) ?
-          <DropDownMenu style={ChatCSS.dropDown} listStyle={{padding:'0', margin: '0'}} value={this.state.channel} onChange={this.handleChange}>
-            {joined_channels}
-          </DropDownMenu> :
-          <div></div>
-        }
+        {/* More messages below modal box */}
         {(this.state.scrollToEnd === false) ?
           <div style={ChatCSS.moreMessagesBelow} onClick={this.scrollToBottom.bind(this)} ref={(el) => { this.moreMessagesBelow = el; }} id={'moreMessagesBelow'}>
             <div style={{ display: 'inline-block', verticalAlign: 'middle', opacity: '1.0' }}>More Messages Below.</div>
           </div> :
           <div></div>
         }
+        {/* Chat input */}
         <textarea ref={(el) => { this.messageInput = el }} placeholder="Send a message.." style={ChatCSS.chatInput} onKeyPress={this.sendMessage.bind(this)} onKeyDown={this.switchChannel.bind(this)}>
         </textarea>
       </div>
@@ -260,7 +242,7 @@ let ChatCSS = {
   },
   chat: {
     width: 'inherit',
-    height: `${h - cI - dD}px`,
+    height: `${h - cI}px`,
     backgroundColor: 'black',
     overflowY: 'scroll',
     border: '1px solid DimGrey',
@@ -274,7 +256,7 @@ let ChatCSS = {
   moreMessagesBelow: {
     display: 'inline-block',
     position: 'absolute',
-    top: `${h - mMB - p - 10 - dD}px`,
+    top: `${h - mMB - p - 10}px`,
     left: `${p}px`,
     right: '0',
     bottom: '0',

@@ -7,6 +7,8 @@ import { List, ListItem } from 'material-ui/List';
 import FlatButton from 'material-ui/FlatButton';
 import RaisedButton from 'material-ui/RaisedButton';
 
+const COMPONENT_NAME = 'ChannelManager'
+
 class ChannelManager extends Component {
   constructor(props) {
     super(props)
@@ -91,6 +93,8 @@ class ChannelManager extends Component {
           streams: new_streams,
         })
 
+        this.props.mtcEE.emitEvent(`updateStreamersEvent`);
+
         return true
       })
     return req
@@ -126,8 +130,11 @@ class ChannelManager extends Component {
           streams: new_streams,
         })
 
+        return true
       })
     }
+
+    this.props.mtcEE.emitEvent(`updateStreamersByCacheEvent`);
   }
 
   join(channel) {
@@ -140,6 +147,8 @@ class ChannelManager extends Component {
     }).catch(function (err) {
       console.error(err)
     });
+
+    this.props.mtcEE.emitEvent('joinChannelByNetworkEvent', {component: COMPONENT_NAME, channel: channel})
   }
 
   leave(channel) {
@@ -152,6 +161,8 @@ class ChannelManager extends Component {
     }).catch(function (err) {
       console.error(err)
     });
+
+    this.props.mtcEE.emitEvent('leaveChannelEvent', {component: COMPONENT_NAME, channel: channel})
   }
 
   render() {
