@@ -1,4 +1,4 @@
-import React, { Component } from 'react'
+import { Component } from 'react'
 import moment from 'moment'
 
 // Clock.js
@@ -30,7 +30,7 @@ class Clock extends Component {
 
   render() {
     return (
-      <h3>It is {this.state.date}</h3>
+      this.state.date
     )
   }
 }

@@ -192,3 +192,339 @@ function mapStateToChat(state) {
 Chat = connect(mapStateToChat)(Chat)
 
 export default Chat
+
+import React, { Component } from 'react'
+import { connect } from 'react-redux'
+import axios from 'axios'
+import { joinChannel, leaveChannel } from '../../actions/channelActions'
+
+import { List, ListItem } from 'material-ui/List';
+import FlatButton from 'material-ui/FlatButton';
+import RaisedButton from 'material-ui/RaisedButton';
+
+const COMPONENT_NAME = 'ChannelManager' 
+
+/**
+ * ChannelManager
+ * 
+ * TODO
+ * 
+ * Manages channels.
+ */
+class ChannelManager extends Component {
+  constructor(props) {
+    super(props)
+
+    this.state = {
+      streams: new Map(),
+      responseCache: null,
+    }
+  }
+
+  componentDidMount() {
+    // Initial updateStreamers
+    this.updateStreamers()
+
+    // Listeners
+    this.props.client.on("join", (channel, username, self) => {
+      if (username === this.props.client.username) {
+        console.log(`${username} has joined ${channel}!`)
+      }
+    });
+
+    this.timerID = setInterval(
+      () => this.updateStreamers(),
+      300000
+    )
+
+    setTimeout(() => {
+      this.join('#TwitchPresents'.toLowerCase())
+      this.join('#landail'.toLowerCase())
+    }, 4000)
+  }
+
+  componentWillUnmount() {
+    clearInterval(this.timerID);
+  }
+
+  async updateStreamers() {
+    let config = {
+      url: 'streams/followed',
+      method: 'get',
+      baseURL: 'https://api.twitch.tv/kraken',
+      headers: { 'Accept': 'application/vnd.twitchtv.v5+json', 'Authorization': `OAuth ${this.props.oauth}` },
+      params: { limit: 100 }
+    }
+
+    const req = await axios.request(config)
+      .then((response) => {
+
+        this.setState({
+          responseCache: response,
+        })
+
+        let new_streams = new Map()
+
+        response.data.streams.map((stream) => {
+          let joined = false
+          let color = { backgroundColor: '#000000' } // Default is black
+
+          if (this.props.channels.has(`#${stream.channel.display_name.toLowerCase()}`)) {
+            const ch = this.props.channels.get(`#${stream.channel.display_name.toLowerCase()}`)
+            joined = ch.joined
+            joined === true ? color.backgroundColor = ch.color : color.backgroundColor = '#000000'
+          }
+
+          new_streams.set(
+            `#${stream.channel.display_name}`,
+            <ListItem style={{ ...ChannelManagerCSS.element, ...color }} key={stream._id}>
+              <div style={ChannelManagerCSS.streamerName}>#{stream.channel.display_name}</div>
+              {(stream.game !== '' && stream.game !== undefined) ?
+                <div style={ChannelManagerCSS.gameName}>{stream.game}</div> :
+                <div style={ChannelManagerCSS.gameName}>N/A</div>}
+              <div style={ChannelManagerCSS.viewers}>{stream.viewers}</div>
+              {(joined === true) ?
+                <FlatButton label='Leave' secondary={true} onClick={this.leave.bind(this, `#${stream.channel.display_name.toLowerCase()}`)} /> :
+                <FlatButton label='Join' primary={true} onClick={this.join.bind(this, `#${stream.channel.display_name.toLowerCase()}`)} />}
+            </ListItem>
+          )
+          return true
+        })
+
+        this.setState({
+          streams: new_streams,
+        })
+
+        this.props.mtcEE.emitEvent(`updateStreamersByNetworkEvent`);
+
+        return true
+      })
+    return req
+  }
+
+  updateStreamersByCache() {
+    let new_streams = new Map()
+
+    if (this.state.responseCache) {
+      this.state.responseCache.data.streams.map((stream) => {
+        let joined = false
+        let color = { backgroundColor: '#000000' } // Default is black
+
+        if (this.props.channels.has(`#${stream.channel.display_name.toLowerCase()}`)) {
+          const ch = this.props.channels.get(`#${stream.channel.display_name.toLowerCase()}`)
+          joined = ch.joined
+          joined === true ? color.backgroundColor = ch.color : color.backgroundColor = '#000000'
+        }
+
+        new_streams.set(
+          `#${stream.channel.display_name}`,
+          <ListItem style={{ ...ChannelManagerCSS.element, ...color }} key={stream._id}>
+            <div style={ChannelManagerCSS.streamerName}>#{stream.channel.display_name}</div>
+            <div style={ChannelManagerCSS.gameName}>{stream.game}</div>
+            <div style={ChannelManagerCSS.viewers}>{stream.viewers}</div>
+            {(joined === true) ?
+              <FlatButton label='Leave' secondary={true} onClick={this.leave.bind(this, `#${stream.channel.display_name.toLowerCase()}`)} /> :
+              <FlatButton label='Join' primary={true} onClick={this.join.bind(this, `#${stream.channel.display_name.toLowerCase()}`)} />}
+          </ListItem>
+        )
+
+        this.setState({
+          streams: new_streams,
+        })
+
+        return true
+      })
+    }
+
+    this.props.mtcEE.emitEvent(`updateStreamersByCacheEvent`);
+  }
+
+  join(channel) {
+    this.props.client.join(channel).then((data) => {
+
+      this.props.dispatch(joinChannel(channel))
+
+      this.updateStreamersByCache()
+
+    }).catch(function (err) {
+      console.error(err)
+    });
+
+    this.props.mtcEE.emitEvent('joinChannelByNetworkEvent', {component: COMPONENT_NAME, channel: channel})
+  }
+
+  leave(channel) {
+    this.props.client.part(channel).then((data) => {
+
+      this.props.dispatch(leaveChannel(channel))
+
+      this.updateStreamers()
+
+    }).catch(function (err) {
+      console.error(err)
+    });
+
+    this.props.mtcEE.emitEvent('leaveChannelEvent', {component: COMPONENT_NAME, channel: channel})
+  }
+
+  render() {
+    let html = Array.from(this.state.streams.values())
+    return (
+      <div>
+        <RaisedButton onClick={this.updateStreamers.bind(this)}>Refresh</RaisedButton>
+        <List style={ChannelManagerCSS.container}>
+          {html}
+        </List>
+      </div>
+    )
+  }
+}
+
+let ChannelManagerCSS = {
+  container: {
+    display: 'flex',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingTop: '10px',
+    paddingBottom: '10px'
+  },
+  element: {
+    border: '1px solid white',
+    width: '150px',
+    color: 'white'
+  },
+  streamerName: {
+    fontSize: '12px',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis'
+  },
+  gameName: {
+    fontSize: '11px',
+    fontStyle: 'italic',
+    opacity: '0.8',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis'
+  },
+  viewers: {
+    fontSize: '9px',
+    opacity: '0.8'
+  }
+}
+
+function mapStateToChannelManager(state) {
+  return {
+    channels: state.channelsReducer.channels
+  }
+}
+
+ChannelManager = connect(mapStateToChannelManager)(ChannelManager)
+
+export default ChannelManager
+
+<AppBar style={{ ...appBar, ...onExpanded }}
+title={<Button label={'Multi-Twitch-Chat'} style={whiteFont} />}
+onLeftIconButtonClick={this.handleDrawerOpen.bind(this)}
+iconElementRight={<Button label={<Clock style={whiteFont} />} />}
+>
+</AppBar>
+
+const content = {
+  fontSize: 20,
+  paddingTop: '64px',
+  border: '1px solid red',
+}
+
+const appBar = {
+  backgroundColor: '#000000',
+  border: '1px solid white',
+  left: 0,
+  width: 'auto',
+  right: 0,
+  position: 'fixed',
+}
+
+const whiteFont = {
+  color: 'white',
+}
+
+const expanded = {
+  left: '255px',
+  // paddingLeft: '255px'
+}
+
+<div style={content}>
+
+<TopAppBar></TopAppBar>
+
+<AppDrawer open={this.state.drawerOpen}>
+  <ChannelManager client={client} oauth={oauth} mtcEE={MultiTwitchChatEE} />
+</AppDrawer>
+{/* <Chat style={{ ...onExpanded }} client={client} mtcEE={MultiTwitchChatEE} /> */}
+</div>
+{/* <ColorPickerGrid>
+</ColorPickerGrid> */}
+
+const h = '500' // height
+const mMB = 20 // moreMessagesBar
+const cI = 40 // chatInput
+const p = 20 // padding
+const dD = 70 // dropDown
+
+
+let ChatCSS = {
+  container: {
+    position: 'relative',
+    width: `${width}px`,
+    height: `${h}px`,
+    padding: `${p}px ${p}px ${p}px ${p}px`,
+    border: '1px solid DimGrey',
+  },
+  chat: {
+    width: `${width}px`,
+    height: `${h - cI}px`,
+    backgroundColor: 'black',
+    overflowY: 'scroll',
+    border: '1px solid DimGrey',
+  },
+  line: {
+    paddingTop: '5px',
+    paddingBottom: '5px',
+    // border: '1px solid white',
+    wordWrap: 'break-word',
+  },
+  moreMessagesBelow: {
+    display: 'inline-block',
+    position: 'absolute',
+    top: `${h - mMB - p - 10}px`,
+    left: `${p}px`,
+    right: '0',
+    bottom: '0',
+    width: `${width - 2}px`,
+    height: '20px',
+    opacity: '.45',
+    backgroundColor: 'black',
+    border: '1px solid DimGrey',
+    color: 'white',
+    textAlign: 'center',
+  },
+  chatInput: {
+    verticalAlign: 'top', // Fixes extra 6px gap
+    width: `${width}px`,
+    height: '40px',
+    overflow: 'hidden',
+    resize: 'none',
+    backgroundColor: 'black',
+    color: 'white',
+    border: '1px solid DimGrey',
+    padding: 0,
+    margin: 0,
+  },
+  dropDown: {
+    backgroundColor: 'white',
+    width: `${width / 2}px`,
+    padding: 0,
+    marginTop: '10px',
+  }
+}

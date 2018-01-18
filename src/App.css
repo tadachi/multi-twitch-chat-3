@@ -1,18 +1,31 @@
-.App-header {
-  background-color: #222;
-  height: 150px;
-  padding: 20px;
-  color: white;
+body {
+	margin: 0;
+	padding: 0;
+	overflow-y: hidden;
+	overflow-x: hidden;
 }
 
-.App-title {
-  font-size: 1.5em;
+/* Component Specific CSS */
+/* ChannelManager */
+#channels::-webkit-scrollbar-track
+{
+  -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3);
+  box-shadow: inset 0 0 6px rgba(0,0,0,0.3);
+	background-color: #000000;
 }
 
-.App-intro {
-  font-size: large;
+#channels::-webkit-scrollbar
+{
+	width: 6px;
+	background-color: #F5F5F5;
 }
 
+#channels::-webkit-scrollbar-thumb
+{
+	background-color: #313030;
+}
+
+/* Chat.js */
 #chat::-webkit-scrollbar-track
 {
   -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3);

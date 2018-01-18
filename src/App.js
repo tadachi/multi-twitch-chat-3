@@ -1,10 +1,12 @@
 import React, { Component } from 'react'
 import './App.css'
 import tmi from 'tmi.js'
-import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
+import { MuiThemeProvider, createMuiTheme } from 'material-ui/styles';
 
 // Components
-import ChannelManager from './components/ChannelManager'
+import TopAppBar from './components/TopAppBar'
+import AppDrawer from './components/AppDrawer'
+import ChannelManager from './components/AppDrawerComponents/ChannelManager'
 import Clock from './components/Clock'
 import Chat from './components/Chat'
 import ColorPickerGrid from './components/ColorPickerGrid'
@@ -49,12 +51,12 @@ function updateStreamersByCacheEvent() {
   console.log(`[${moment().format('h:mm:ss A')}] Updated streamers list by cache.`);
 }
 
-function updateStreamersEvent() {
+function updateStreamersNetworkEvent() {
   console.log(`[${moment().format('h:mm:ss A')}] Updated streamers by network.`);
 }
 
 MultiTwitchChatEE.addListener('updateStreamersByCacheEvent', updateStreamersByCacheEvent);
-MultiTwitchChatEE.addListener('updateStreamersByNetworkEvent', updateStreamersEvent);
+MultiTwitchChatEE.addListener('updateStreamersByNetworkEvent', updateStreamersNetworkEvent);
 
 /*
 updateStreamersByCacheEvent
@@ -63,24 +65,52 @@ joinChannelEvent
 leaveChannelEvent
 */
 
+const drawerWidth = 200
+
+let drawer = {
+  width: drawerWidth,
+  backgroundColor: 'black',
+  overflowY: 'scroll',
+  overflowX: 'hidden',
+}
+
+const expanded = {
+  left: `${drawerWidth + 2}px`,
+  // paddingLeft: '255px'
+}
+
+const theme = createMuiTheme({
+  palette: {
+    type: 'dark', // Switching the dark mode on is a single property value change.
+  },
+});
+
 class App extends Component {
+  constructor(props) {
+    super(props)
+    this.state = {
+      drawerOpen: true
+    }
+  }
+
+  handleDrawerOpen() {
+    this.setState({ drawerOpen: !this.state.drawerOpen });
+  }
 
   render() {
+    const onExpanded = this.state.drawerOpen === true ? expanded : ''
+
     return (
-      <div className="App">
-        <Clock />
-        <MuiThemeProvider>
-          <ChannelManager client={client} oauth={oauth} mtcEE={MultiTwitchChatEE} />
-        </MuiThemeProvider>
-        <MuiThemeProvider>
-          <Chat client={client} mtcEE={MultiTwitchChatEE}/>
-        </MuiThemeProvider>
-        <ColorPickerGrid>
-        </ColorPickerGrid>
-      </div>
+      <MuiThemeProvider theme={theme}>
+        <div id={'container'} >
+          <AppDrawer style={drawer} open={this.state.drawerOpen}>
+            <ChannelManager client={client} oauth={oauth} mtcEE={MultiTwitchChatEE} />
+          </AppDrawer>
+          <Chat style={{ ...onExpanded }} client={client} mtcEE={MultiTwitchChatEE} drawerWidth={drawerWidth} />
+        </div>
+      </MuiThemeProvider>
     )
   }
 }
-
 
 export default App;
