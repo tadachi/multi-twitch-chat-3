@@ -1,64 +1,27 @@
 import React, { Component } from 'react'
 import './App.css'
-import tmi from 'tmi.js'
 import { MuiThemeProvider, createMuiTheme } from 'material-ui/styles';
-
 // Components
-import TopAppBar from './components/TopAppBar'
+import LoginButton from './components/LoginButton'
 import AppDrawer from './components/AppDrawer'
 import ChannelManager from './components/AppDrawerComponents/ChannelManager'
-import Clock from './components/Clock'
 import Chat from './components/Chat'
-import ColorPickerGrid from './components/ColorPickerGrid'
-
+import Clock from './components/Clock'
+// import ColorPickerGrid from './components/ColorPickerGrid'
+// Material-ui
+import Paper from 'material-ui/Paper';
+// Utilities
+import tmi from 'tmi.js'
+import axios from 'axios'
 import EventEmitter from 'wolfy87-eventemitter'
-import moment from 'moment'
 
-const oauth = 'ntzeiqkoi1nubmv2f4kxlieu27z7mb'
-// const client_id = 'gpa5zi9y5d70q9b2lcpcwvikp7mek0'
-
-// tmi.js client
-let options = {
-  options: {
-    debug: false
-  },
-  connection: {
-    reconnect: true
-  },
-  identity: {
-    username: 'tak_ada',
-    password: 'oauth:ntzeiqkoi1nubmv2f4kxlieu27z7mb'
-  },
-}
-
-let client = new tmi.client(options)
-
-client.connect()
-
-client.on("connected", function (address, port) {
-  console.log(address + ':' + port)
-});
-
-client.on("disconnected", (reason) => {
-  console.log(`disconnected from server. Reason: ${reason}`)
-});
+const client_id = 'gpa5zi9y5d70q9b2lcpcwvikp7mek0'
 
 // Multi-twitch-chat 3 event system (mtc)
-
 let MultiTwitchChatEE = new EventEmitter()
 
-function updateStreamersByCacheEvent() {
-  console.log(`[${moment().format('h:mm:ss A')}] Updated streamers list by cache.`);
-}
-
-function updateStreamersNetworkEvent() {
-  console.log(`[${moment().format('h:mm:ss A')}] Updated streamers by network.`);
-}
-
-MultiTwitchChatEE.addListener('updateStreamersByCacheEvent', updateStreamersByCacheEvent);
-MultiTwitchChatEE.addListener('updateStreamersByNetworkEvent', updateStreamersNetworkEvent);
-
 /*
+loginByTwitchEvent
 updateStreamersByCacheEvent
 updateStreamersByNetworkEvent
 joinChannelEvent
@@ -88,8 +51,24 @@ const theme = createMuiTheme({
 class App extends Component {
   constructor(props) {
     super(props)
+
     this.state = {
-      drawerOpen: true
+      drawerOpen: true,
+      client: null,
+      oAuth: null
+    }
+
+    this.options = {
+      options: {
+        debug: true
+      },
+      connection: {
+        reconnect: true
+      },
+      identity: {
+        username: '',
+        password: ''
+      },
     }
   }
 
@@ -97,20 +76,102 @@ class App extends Component {
     this.setState({ drawerOpen: !this.state.drawerOpen });
   }
 
+  componentDidMount() {
+    // tmi.js client
+    if (getParams(document.location.hash)['access_token']) {
+      const token = getParams(document.location.hash)['access_token']
+      this.getUserObject(token).then((response) => {
+        if (response.status === 200) {
+          this.options.identity.username = response.data.name
+          this.options.identity.password = token
+          this.setState({
+            oAuth: token,
+            client: new tmi.client(this.options)
+          })
+          this.state.client.connect()
+        } else {
+          throw Error(response)
+        }
+      })
+    }
+  }
+
+  async getUserObject(oauth) {
+    let config = {
+      url: 'user',
+      method: 'get',
+      baseURL: 'https://api.twitch.tv/kraken',
+      headers: {
+        'Accept': 'application/vnd.twitchtv.v5+json',
+        'Client-Id': client_id,
+        'Authorization': `OAuth ${oauth}`
+      },
+    }
+
+    const req = await axios.request(config).then((response) => {
+      return response
+    })
+
+    return req
+  }
+
   render() {
     const onExpanded = this.state.drawerOpen === true ? expanded : ''
+
+    const login = this.state.oAuth ? 
+      null :
+      // <LoginButton client_id={client_id} style={loginButton} disabled={true} color={'primary'} /> :
+      <LoginButton client_id={client_id} style={loginButton} color={'primary'} />
+
+    const channelManager = this.state.client ?
+      <ChannelManager client={this.state.client} client_id={client_id} oAuth={this.state.oAuth} mtcEE={MultiTwitchChatEE} loggedIn={true} /> :
+      null
+
+    const chat = this.state.client ?
+      <Chat style={{ ...onExpanded }} client={this.state.client} mtcEE={MultiTwitchChatEE} drawerWidth={drawerWidth} /> :
+      null
 
     return (
       <MuiThemeProvider theme={theme}>
         <div id={'container'} >
           <AppDrawer style={drawer} open={this.state.drawerOpen}>
-            <ChannelManager client={client} oauth={oauth} mtcEE={MultiTwitchChatEE} />
+            <Paper style={paperStyle}>
+              <Clock />
+              {login}
+            </Paper>
+            {channelManager}
           </AppDrawer>
-          <Chat style={{ ...onExpanded }} client={client} mtcEE={MultiTwitchChatEE} drawerWidth={drawerWidth} />
+          {chat}
         </div>
       </MuiThemeProvider>
     )
   }
+}
+
+const getParams = query => {
+  if (!query) {
+    return {};
+  }
+
+  return (/^[?#]/.test(query) ? query.slice(1) : query)
+    .split('&')
+    .reduce((params, param) => {
+      let [key, value] = param.split('=');
+      params[key] = value ? decodeURIComponent(value.replace(/\+/g, ' ')) : '';
+      return params;
+    }, {});
+}
+
+const paperStyle = {
+  backgroundColor: 'black',
+  border: '1px solid white',
+  margin: '2%',
+  padding: '2%',
+  color: 'white',
+}
+
+const loginButton = {
+  width: '100%',
 }
 
 export default App;

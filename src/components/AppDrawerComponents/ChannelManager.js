@@ -1,14 +1,15 @@
 import React, { Component } from 'react'
-import { connect } from 'react-redux'
-import axios from 'axios'
+// Redux
 import { joinChannel, leaveChannel } from '../../actions/channelActions'
-
+import { connect } from 'react-redux'
+// Material-ui
 import { withStyles } from 'material-ui/styles'
+import Paper from 'material-ui/Paper';
 import IconButton from 'material-ui/IconButton'
 import AddCircleOutline from 'material-ui-icons/AddCircleOutline'
 import HighlightOff from 'material-ui-icons/HighlightOff'
-
-const COMPONENT_NAME = 'ChannelManager'
+// Utilties
+import axios from 'axios'
 
 const styles = {
   iconButton: {
@@ -29,8 +30,6 @@ const styles = {
 /**
  * ChannelManager
  * 
- * TODO
- * 
  * Manages channels.
  */
 class ChannelManager extends Component {
@@ -40,12 +39,16 @@ class ChannelManager extends Component {
     this.state = {
       streams: new Map(),
       responseCache: null,
+      loggedIn: false,
     }
   }
 
   componentDidMount() {
-    // Initial updateStreamers
-    this.updateStreamers()
+
+
+    // if (this.state.loggedIn) {
+    //   this.updateStreamers()
+    // }
 
     // Listeners
     this.props.client.on("join", (channel, username, self) => {
@@ -54,33 +57,79 @@ class ChannelManager extends Component {
       }
     });
 
-    this.timerID = setInterval(
-      () => this.updateStreamers(),
+    this.props.client.on("connected", (address, port) => {
+      this.setState({
+        loggedIn: true
+      })
+      console.log(address + ':' + port)
+      // Initial updateStreamers
+      this.updateStreamers()
+    });
+
+    this.props.client.on("disconnected", (reason) => {
+      this.setState({
+        loggedIn: false
+      })
+      console.log(`disconnected from server. Reason: ${reason}`)
+    });
+
+    this.updateStreamersTimerID = setInterval(
+      () => {
+        if (this.state.loggedIn) {
+          this.updateStreamers()
+        }
+      },
       300000
     )
 
+    this.updateStreamersCachedTimerID = setInterval(
+      () => {
+        this.updateStreamersByCache()
+      },
+      5000
+    )
+
     setTimeout(() => {
-      // this.join('#TwitchPresents')
-      // this.join('#Cirno_TV')
-      // this.join('#Goati_')
-      // this.join('#TheLCC')
-      // this.join('#Avilo')
-      // this.join('#landail')
-      // this.join('#werster')
-      this.join('#Aquas')
-      this.join('#Fiercekyo')
-      this.join('#Raikou')
-      this.join('#vultus')
-      this.join('#neohart')
-      this.join('#zetsubera')
-      this.join('#procplays')
-      this.join('#azureseishin')
-      this.join('#pykn')
+      if (this.state.loggedIn) {
+        // this.join('#TwitchPresents')
+        // this.join('#Cirno_TV')
+        // this.join('#Goati_')
+        // this.join('#TheLCC')
+        // this.join('#Avilo')
+        // this.join('#landail')
+        // this.join('#DarkSaber2k')
+        // this.join('#maurice_33')
+        // this.join('#werster')
+        // this.join('#Aquas')
+        // this.join('#Fiercekyo')
+        // this.join('#mulsqi')
+        // this.join('#bafael')
+        // this.join('#theboyks')
+        // this.join('#artosis')
+        // this.join('#Raikou')
+        // this.join('#perpetualmm')
+        // this.join('#Bingchang')
+        // this.join('#frokenok')
+        // this.join('#vultus')
+        // this.join('#neohart')
+        this.join('#zetsubera')
+        this.join('#procplays')
+        this.join('#lazerlong')
+        this.join('#testrunner')
+        this.join('#jiseed')
+        this.join('#xxxindyxxx')
+        this.join('#narcissawright')
+        // this.join('#azureseishin')
+        // this.join('#pykn')
+        // this.join('#destiny')
+        // this.join('#playhearthstone')
+      }
     }, 4000)
   }
 
   componentWillUnmount() {
-    clearInterval(this.timerID);
+    clearInterval(this.updateStreamersTimerID);
+    // clearInterval(this.updateStreamersCachedTimerID);
   }
 
   async updateStreamers() {
@@ -88,7 +137,7 @@ class ChannelManager extends Component {
       url: 'streams/followed',
       method: 'get',
       baseURL: 'https://api.twitch.tv/kraken',
-      headers: { 'Accept': 'application/vnd.twitchtv.v5+json', 'Authorization': `OAuth ${this.props.oauth}` },
+      headers: { 'Accept': 'application/vnd.twitchtv.v5+json', 'Authorization': `OAuth ${this.props.oAuth}` },
       params: { limit: 100 }
     }
 
@@ -121,8 +170,8 @@ class ChannelManager extends Component {
             </IconButton>
 
           new_streams.set(
-            displayName,
-            <div style={ChannelManagerCSS.item} key={displayName.toLowerCase()}>
+            displayName.toLowerCase(),
+            <Paper style={ChannelManagerCSS.item} key={displayName.toLowerCase()}>
               <div style={ChannelManagerCSS.streamer}>{displayName}</div>
               <div style={{ textAlign: 'right', fontSize: '10px' }} >
                 {button}
@@ -133,7 +182,7 @@ class ChannelManager extends Component {
               <div></div>
               <div style={ChannelManagerCSS.status}>{status}</div>
               <div style={ChannelManagerCSS.viewers}>{viewers}</div>
-            </div >
+            </Paper>
           )
           return true
         })
@@ -175,8 +224,8 @@ class ChannelManager extends Component {
           </IconButton>
 
         new_streams.set(
-          displayName,
-          <div style={ChannelManagerCSS.item} key={displayName.toLowerCase()}>
+          displayName.toLowerCase(),
+          <Paper style={ChannelManagerCSS.item} key={displayName.toLowerCase()}>
             <div style={ChannelManagerCSS.streamer}>{displayName}</div>
             <div style={{ textAlign: 'right', fontSize: '10px' }} >
               {button}
@@ -187,7 +236,7 @@ class ChannelManager extends Component {
             <div></div>
             <div style={ChannelManagerCSS.status}>{status}</div>
             <div style={ChannelManagerCSS.viewers}>{viewers}</div>
-          </div >
+          </Paper >
         )
         return true
       })
@@ -196,7 +245,7 @@ class ChannelManager extends Component {
         streams: new_streams,
       })
 
-      this.props.mtcEE.emitEvent(`updateStreamersByCacheEvent`);
+      this.props.mtcEE.emitEvent(`updateStreamersByCacheEvent`, [this.state.streams]);
     }
 
 
@@ -204,22 +253,25 @@ class ChannelManager extends Component {
 
   join(channel) {
     this.props.client.join(channel).then((data) => {
-
-      this.props.dispatch(joinChannel(channel.toLowerCase()))
-
-      this.updateStreamersByCache()
-
+      // Only join channels that are online
+      if (this.state.streams.get(channel.toLowerCase())) {
+        this.props.dispatch(joinChannel(channel.toLowerCase()))
+        this.updateStreamersByCache()
+      } else {
+        // Remove channels that are offline.
+        console.log(`removing ${channel}`)
+      }
     }).catch(function (err) {
       console.error(err)
     });
 
-    this.props.mtcEE.emitEvent('joinChannelByNetworkEvent', { component: COMPONENT_NAME, channel: channel })
+    this.props.mtcEE.emitEvent('joinChannelEvent', [channel.toLowerCase()])
   }
 
   leave(channel) {
     this.props.client.part(channel).then((data) => {
 
-      this.props.dispatch(leaveChannel(channel))
+      this.props.dispatch(leaveChannel(channel.toLowerCase()))
 
       this.updateStreamersByCache()
 
@@ -227,7 +279,7 @@ class ChannelManager extends Component {
       console.error(err)
     });
 
-    this.props.mtcEE.emitEvent('leaveChannelEvent', { component: COMPONENT_NAME, channel: channel })
+    this.props.mtcEE.emitEvent('leaveChannelEvent', [channel.toLowerCase()])
   }
 
   render() {
@@ -241,8 +293,6 @@ class ChannelManager extends Component {
 }
 
 let ChannelManagerCSS = {
-  container: {
-  },
   item: {
     backgroundColor: 'black',
     display: 'grid',

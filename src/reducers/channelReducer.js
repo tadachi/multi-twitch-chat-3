@@ -22,7 +22,7 @@ const channelReducer = (state = { channels: new Map() }, actions) => {
       }
       
       state = { channels: new_channels }
-      break;
+      break
     }
     case 'LEAVE_CHANNEL': {
       let new_channels = state.channels
@@ -37,11 +37,23 @@ const channelReducer = (state = { channels: new Map() }, actions) => {
       }
       
       state = { channels: new_channels }
-      break;
+      break
+    }
+    case 'REMOVE_CHANNEL': {
+      let new_channels = state.channels
+
+      if (state.channels.get(actions.channel)) {
+        new_channels.delete(actions.channel)
+      } else {
+        console.log(`${actions.channel} channel not found.`)
+      }
+      state = { channels: new_channels }
+      break
     }
     default: {
       return state
     }
+
   }
   return state
 }

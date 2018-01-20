@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import './App.css';
 
+
 class App extends Component {
   render() {
     return (
@@ -528,3 +529,32 @@ let ChatCSS = {
     marginTop: '10px',
   }
 }
+
+import React, { Component } from 'react'
+import Button from 'material-ui/Button'
+import axios from 'axios'
+import { connect } from 'react-redux'
+
+class LoginButton extends Component {
+  constructor(props) {
+    super(props)
+
+    this.url = `https://api.twitch.tv/kraken/oauth2/authorize
+?client_id=${this.props.client_id}
+&redirect_uri=http://localhost:3000
+&response_type=token+id_token
+&scope=openid+chat_login
+&state=c3ab8aa609ea11e793ae92361f002671`
+  }
+
+  render() {
+    return (
+      <div>
+        <a href={this.url}><Button style={{ ...this.props.style }} raised color="primary">Login With Twitch</Button></a>
+      </div>
+    )
+  }
+
+}
+
+export default LoginButton
