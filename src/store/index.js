@@ -8,7 +8,7 @@ const reducers = combineReducers({
 const store = createStore(
   reducers,
   // Disable this in production
-  window.__REDUX_DEVTOOLS_EXTENSION__ && window.__REDUX_DEVTOOLS_EXTENSION__()
+  // window.__REDUX_DEVTOOLS_EXTENSION__ && window.__REDUX_DEVTOOLS_EXTENSION__()
 )
 
 // store.subscribe(() => {

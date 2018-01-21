@@ -3,10 +3,15 @@ import ReactHtmlParser from 'react-html-parser';
 import { connect } from 'react-redux'
 import moment from 'moment'
 
+
+// Material-ui
+import Select from 'material-ui/Select';
+import Settings from 'material-ui-icons/Settings'
+import ClearAll from 'material-ui-icons/ClearAll'
+
+// Utility
 import twitch_emotes from '../emotes/twitch_emotes'
 import bttv_emotes from '../emotes/bttv_emotes'
-
-import Select from 'material-ui/Select';
 
 import '../App.css'
 // import { List, ListItem } from 'material-ui/List';
@@ -37,11 +42,14 @@ class Chat extends Component {
       height: window.innerHeight - 10,
       channels: Array.from(props.channels.keys()).sort(),
       channel: 0,
+      joined_channels: []
     }
     this.regex_channel = /\/\#\S+|\S+\ +/ //['/#Tod', /#Tod    '] OK ['#Tod', '#Tod  '] Not OK.
   }
 
   componentDidMount() {
+    // Initial
+
     this.chatScroll.addEventListener('scroll', this.handleChatScroll.bind(this))
 
     this.props.client.on('join', (channel, username, self) => {
@@ -86,21 +94,15 @@ class Chat extends Component {
       100000
     )
 
-    this.updateChannelsID = setInterval(
-      () => {
-        this.setState({
-          channels: Array.from(this.props.channels.keys()).sort()
-        })
-      }, 2000
-    )
-
     this.props.client.on('chat', (channel, userstate, message, self) => {
       let m = <div style={{ marginLeft: '5px', padding: 0, }}>
-        <span style={{opacity: '0.8', fontSize: '10px', fontWeight: 'bold',
-            overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', }}>
+        <span style={{
+          opacity: '0.8', fontSize: '10px', fontWeight: 'bold',
+          overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis',
+        }}>
           {moment().format('h:mm:ss')} {channel}
         </span>
-        <span style={{color: `${userstate['color']}`, marginLeft: '2px', }}>{userstate['display-name'] + ': '} </span>
+        <span style={{ color: `${userstate['color']}`, marginLeft: '2px', }}>{userstate['display-name'] + ': '} </span>
         <span style={{}}>{this.parseForEmotes(message)}</span>
       </div>
 
@@ -115,8 +117,38 @@ class Chat extends Component {
 
     // mtcEE events
     this.props.mtcEE.on('joinChannelEvent', (channel) => {
+      this.setState({
+        channels: Array.from(this.props.channels.keys()).sort(),
+      })
+      let new_joined_channels = []
+      for (let i = 0; i < this.state.channels.length; i++) {
+        new_joined_channels.push(<option style={{ backgroundColor: 'black' }} value={i} key={this.state.channels[i]}>{this.state.channels[i]}</option>)
+      }
+      this.setState({
+        channels: Array.from(this.props.channels.keys()).sort(),
+        joined_channels: new_joined_channels
+      })
     })
     this.props.mtcEE.on('leaveChannelEvent', (channel) => {
+      this.setState({
+        channels: Array.from(this.props.channels.keys()).sort(),
+      })
+      let new_joined_channels = []
+      for (let i = 0; i < this.state.channels.length; i++) {
+        new_joined_channels.push(<option style={{ backgroundColor: 'black' }} value={i} key={this.state.channels[i]}>{this.state.channels[i]}</option>)
+      }
+      this.setState({
+        channels: Array.from(this.props.channels.keys()).sort(),
+        joined_channels: new_joined_channels
+      })
+      console.log(this.state.joined_channels)
+    })
+    this.props.mtcEE.on('updateStreamersByNetworkEvent', (channels) => {
+      // Use the network event to leave/remove those channels when streamers go offline, 
+      console.log(channels)
+    })
+    this.props.mtcEE.on('updateStreamersByCache', (channels) => {
+      console.log(channels)
     })
   }
 
@@ -125,6 +157,7 @@ class Chat extends Component {
     this.chatScroll.removeEventListener('scroll', this.handleChatScroll.bind(this))
     window.removeEventListener("resize", this.updateDimensions.bind(this));
     clearInterval(this.truncatetimerID);
+    clearInterval(this.updateChannelsID);
   }
 
   updateDimensions() {
@@ -209,6 +242,8 @@ class Chat extends Component {
       });
 
       this.messageInput.value = ''
+
+      this.scrollToBottom()
       return
     }
   }
@@ -268,34 +303,37 @@ class Chat extends Component {
     this.messagesEnd.scrollIntoView({ behavior: "instant" })
   }
 
-  render() {
-    let joined_channels = []
+  clearChat() {
+    const messages = []
+    const msg_id = 0
+    this.setState({
+      messages: messages,
+      msg_id: msg_id
+    })
+  }
 
-    for (let i = 0; i < this.state.channels.length; i++) {
-      if (this.props.channels.get(this.state.channels[i]).joined === true) {
-        joined_channels.push(<option style={{ backgroundColor: 'black' }} value={i} key={this.state.channels[i]}>{this.state.channels[i]}</option>)
-      }
-    }
+  render() {
 
     const drawerWidth = this.props.drawerWidth + 20
     const w = this.state.width - drawerWidth
     const h = this.state.height
-    const chatH = 50
+    const chatH = 55
 
-    const channelSelect = joined_channels.length > 0 ?
-      <Select onChange={this.handleChange('channel')} style={{ color: 'white', width: '80%', }} value={this.state.channel} native>
-        {joined_channels}
+    const channelSelect = this.state.joined_channels.length > 0 ?
+      <Select onChange={this.handleChange('channel')} style={{ color: 'white', width: '100%', }} value={this.state.channel} native>
+        {this.state.joined_channels}
       </Select> :
-      <Select style={{ color: 'white', width: '80%', cursor: 'not-allowed', }} value={this.state.channel} native disabled>
-        {joined_channels}
-      </Select>
+      null
+    // <Select style={{ color: 'white', width: '100%', cursor: 'not-allowed', }} value={this.state.channel} native disabled>
+    //   {joined_channels}
+    // </Select>
 
-    const textAreaChat = joined_channels.length > 0 ?
-      <textarea style={{ color: 'white', width: '80%', height: `${chatH}px`, backgroundColor: 'black', resize: 'none', overflowX: 'hidden' }}
+    const textAreaChat = this.state.joined_channels.length > 0 ?
+      <textarea style={{ color: 'white', width: '65%', height: `${chatH}px`, backgroundColor: 'black', resize: 'none', overflowX: 'hidden' }}
         ref={(el) => { this.messageInput = el }} placeholder={`Send a message to ${this.state.channels[this.state.channel]}..`}
         onKeyPress={this.sendMessage.bind(this)} onKeyDown={this.switchChannel.bind(this)}>
       </textarea> :
-      <textarea style={{ color: 'white', width: '80%', height: `${chatH}px`, backgroundColor: 'black', resize: 'none', overflowX: 'hidden' }}
+      <textarea style={{ color: 'white', width: '65%', height: `${chatH}px`, backgroundColor: 'black', resize: 'none', overflowX: 'hidden' }}
         ref={(el) => { this.messageInput = el }} placeholder={`Join a channel to chat!`} disabled
       >
       </textarea>
@@ -318,12 +356,23 @@ class Chat extends Component {
           <div></div>
         }
         {/* Chat input */}
-        <div style={{ textAlign: 'center', }}></div>
-        <div style={{ display: 'flex', flexDirection: 'row', width: '100%', height: `${chatH}px` }}>
-          <div style={{ flexGrow: 1, margin: '0px 0px 0px 20px' }}>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: '10px 25px 200px 25px 1fr',
+          gridColumnGap: '1rem',
+          alignItems: 'center',
+        }}>
+          <div></div>
+          <div>
+            {/* <Settings /> */}
+          </div>
+          <div>
             {channelSelect}
           </div>
-          <div style={{ flexGrow: 4, margin: '5px 5px 5px 5px' }}>
+          <div>
+            <ClearAll onClick={this.clearChat.bind(this)} />
+          </div>
+          <div>
             {textAreaChat}
           </div>
         </div>
@@ -337,6 +386,8 @@ Chat.defaultProps = {
   twitch_emotes_map: twitch_emotes_map,
   bttv_emotes_map: bttv_emotes_map,
 };
+
+
 
 function mapStateToChat(state) {
   return {

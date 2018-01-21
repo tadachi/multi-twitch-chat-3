@@ -10,7 +10,6 @@ export function joinChannel(channel) {
     channel: channel
   }
 }
-
 // Leaves the channel
 export function leaveChannel(channel) {
   return {
@@ -18,6 +17,7 @@ export function leaveChannel(channel) {
     channel: channel
   }
 }
+
 export function removeChannel(channel) {
   return {
     type: REMOVE_CHANNEL,

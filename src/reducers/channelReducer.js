@@ -27,13 +27,13 @@ const channelReducer = (state = { channels: new Map() }, actions) => {
     case 'LEAVE_CHANNEL': {
       let new_channels = state.channels
 
-      // Keep track of the color
       if (state.channels.get(actions.channel)) {
-        const color = state.channels.get(actions.channel).color
-        new_channels = state.channels.set(actions.channel, {joined: false, color: color})
+        new_channels.delete(actions.channel)
+        // Keep track of the color and join status
+        // const color = state.channels.get(actions.channel).color
+        // new_channels = state.channels.set(actions.channel, {joined: false, color: color})
       } else {
-        const new_color = web_safe_colors[randomIntFromInterval(0, max_length)]
-        new_channels = state.channels.set(actions.channel, {joined: false, color: new_color})
+        console.error(`${actions.channel} Channel not found.`)
       }
       
       state = { channels: new_channels }
@@ -45,7 +45,7 @@ const channelReducer = (state = { channels: new Map() }, actions) => {
       if (state.channels.get(actions.channel)) {
         new_channels.delete(actions.channel)
       } else {
-        console.log(`${actions.channel} channel not found.`)
+        console.error(`${actions.channel} channel not found.`)
       }
       state = { channels: new_channels }
       break

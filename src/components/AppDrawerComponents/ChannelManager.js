@@ -11,6 +11,10 @@ import HighlightOff from 'material-ui-icons/HighlightOff'
 // Utilties
 import axios from 'axios'
 
+String.prototype.clean = function () {
+  return this.replace(/ /g, "_").toLowerCase();
+}
+
 const styles = {
   iconButton: {
     width: '15px',
@@ -44,12 +48,6 @@ class ChannelManager extends Component {
   }
 
   componentDidMount() {
-
-
-    // if (this.state.loggedIn) {
-    //   this.updateStreamers()
-    // }
-
     // Listeners
     this.props.client.on("join", (channel, username, self) => {
       if (username === this.props.client.username) {
@@ -81,7 +79,6 @@ class ChannelManager extends Component {
       },
       300000
     )
-
     this.updateStreamersCachedTimerID = setInterval(
       () => {
         this.updateStreamersByCache()
@@ -93,25 +90,29 @@ class ChannelManager extends Component {
       if (this.state.loggedIn) {
         // this.join('#TwitchPresents')
         // this.join('#Cirno_TV')
-        // this.join('#Goati_')
-        // this.join('#TheLCC')
+        // this.join('#destiny')
+        // this.join('#playhearthstone')
         // this.join('#Avilo')
-        // this.join('#landail')
-        // this.join('#DarkSaber2k')
-        // this.join('#maurice_33')
         // this.join('#werster')
-        // this.join('#Aquas')
-        // this.join('#Fiercekyo')
-        // this.join('#mulsqi')
-        // this.join('#bafael')
-        // this.join('#theboyks')
-        // this.join('#artosis')
-        // this.join('#Raikou')
-        // this.join('#perpetualmm')
-        // this.join('#Bingchang')
-        // this.join('#frokenok')
-        // this.join('#vultus')
-        // this.join('#neohart')
+
+        this.join('#icarusFW')
+        this.join('#Pasky')
+        this.join('#Metako')
+        this.join('#landail')
+        this.join('#DarkSaber2k')
+        this.join('#maurice_33')
+        this.join('#Aquas')
+        this.join('#Fiercekyo')
+        this.join('#mulsqi')
+        this.join('#bafael')
+        this.join('#theboyks')
+        this.join('#artosis')
+        this.join('#Raikou')
+        this.join('#perpetualmm')
+        this.join('#Bingchang')
+        this.join('#frokenok')
+        this.join('#vultus')
+        this.join('#neohart')
         this.join('#zetsubera')
         this.join('#procplays')
         this.join('#lazerlong')
@@ -119,10 +120,15 @@ class ChannelManager extends Component {
         this.join('#jiseed')
         this.join('#xxxindyxxx')
         this.join('#narcissawright')
-        // this.join('#azureseishin')
-        // this.join('#pykn')
-        // this.join('#destiny')
-        // this.join('#playhearthstone')
+        this.join('#Goati_')
+        this.join('#TheLCC')
+        this.join('#azureseishin')
+        this.join('#pykn')
+        this.join('#jiggeh')
+        this.join('#chuboh')
+        this.join('#UFotekkie')
+        this.join('#Ty2358')
+
       }
     }, 4000)
   }
@@ -151,27 +157,28 @@ class ChannelManager extends Component {
 
         response.data.streams.map((stream) => {
           const displayName = `#${stream.channel.display_name}`
+          const name = `#${stream.channel.name}`
           const game = stream.game
           const viewers = stream.viewers
           const status = stream.channel.status
 
           let joined = false
-          if (this.props.channels.has(displayName.toLowerCase())) {
-            joined = this.props.channels.get(displayName.toLowerCase()).joined
+          if (this.props.channels.has(name.clean())) {
+            joined = this.props.channels.get(name.clean()).joined
             // joined === true ? color.backgroundColor = ch.color : color.backgroundColor = '#000000'
           }
 
           const button = joined ?
             <IconButton className='material-icons' classes={{ root: this.props.classes.iconButton }}>
-              <HighlightOff classes={{ root: this.props.classes.leaveIcon }} onClick={this.leave.bind(this, displayName.toLowerCase())} />
+              <HighlightOff classes={{ root: this.props.classes.leaveIcon }} onClick={this.leave.bind(this, name.clean())} />
             </IconButton> :
             <IconButton className='material-icons' classes={{ root: this.props.classes.iconButton }}>
-              <AddCircleOutline classes={{ root: this.props.classes.joinIcon }} onClick={this.join.bind(this, displayName.toLowerCase())} />
+              <AddCircleOutline classes={{ root: this.props.classes.joinIcon }} onClick={this.join.bind(this, name.clean())} />
             </IconButton>
 
           new_streams.set(
-            displayName.toLowerCase(),
-            <Paper style={ChannelManagerCSS.item} key={displayName.toLowerCase()}>
+            name.clean(),
+            <Paper style={ChannelManagerCSS.item} key={displayName.clean()}>
               <div style={ChannelManagerCSS.streamer}>{displayName}</div>
               <div style={{ textAlign: 'right', fontSize: '10px' }} >
                 {button}
@@ -191,7 +198,7 @@ class ChannelManager extends Component {
           streams: new_streams,
         })
 
-        this.props.mtcEE.emitEvent(`updateStreamersByNetworkEvent`);
+        this.props.mtcEE.emitEvent(`updateStreamersByNetworkEvent`, [Array.from(new_streams.keys())]);
 
         return true
       })
@@ -204,28 +211,28 @@ class ChannelManager extends Component {
     if (this.state.responseCache) {
       this.state.responseCache.data.streams.map((stream) => {
         const displayName = `#${stream.channel.display_name}`
+        const name = `#${stream.channel.name}`
         const game = stream.game
         const viewers = stream.viewers
         const status = stream.channel.status
 
         let joined = false
-
-        if (this.props.channels.has(displayName.toLowerCase())) {
-          joined = this.props.channels.get(displayName.toLowerCase()).joined
+        if (this.props.channels.has(name.clean())) {
+          joined = this.props.channels.get(name.clean()).joined
           // joined === true ? color.backgroundColor = ch.color : color.backgroundColor = '#000000'
         }
 
         const button = joined ?
           <IconButton className='material-icons' classes={{ root: this.props.classes.iconButton }}>
-            <HighlightOff classes={{ root: this.props.classes.leaveIcon }} onClick={this.leave.bind(this, displayName.toLowerCase())} />
+            <HighlightOff classes={{ root: this.props.classes.leaveIcon }} onClick={this.leave.bind(this, name.clean())} />
           </IconButton> :
           <IconButton className='material-icons' classes={{ root: this.props.classes.iconButton }}>
-            <AddCircleOutline classes={{ root: this.props.classes.joinIcon }} onClick={this.join.bind(this, displayName.toLowerCase())} />
+            <AddCircleOutline classes={{ root: this.props.classes.joinIcon }} onClick={this.join.bind(this, name.clean())} />
           </IconButton>
 
         new_streams.set(
-          displayName.toLowerCase(),
-          <Paper style={ChannelManagerCSS.item} key={displayName.toLowerCase()}>
+          name.clean(),
+          <Paper style={ChannelManagerCSS.item} key={displayName.clean()}>
             <div style={ChannelManagerCSS.streamer}>{displayName}</div>
             <div style={{ textAlign: 'right', fontSize: '10px' }} >
               {button}
@@ -236,7 +243,7 @@ class ChannelManager extends Component {
             <div></div>
             <div style={ChannelManagerCSS.status}>{status}</div>
             <div style={ChannelManagerCSS.viewers}>{viewers}</div>
-          </Paper >
+          </Paper>
         )
         return true
       })
@@ -245,41 +252,47 @@ class ChannelManager extends Component {
         streams: new_streams,
       })
 
-      this.props.mtcEE.emitEvent(`updateStreamersByCacheEvent`, [this.state.streams]);
+      this.props.mtcEE.emitEvent(`updateStreamersByCacheEvent`, [Array.from(new_streams.keys())]);
     }
-
-
   }
 
   join(channel) {
-    this.props.client.join(channel).then((data) => {
-      // Only join channels that are online
-      if (this.state.streams.get(channel.toLowerCase())) {
-        this.props.dispatch(joinChannel(channel.toLowerCase()))
-        this.updateStreamersByCache()
-      } else {
-        // Remove channels that are offline.
-        console.log(`removing ${channel}`)
-      }
-    }).catch(function (err) {
-      console.error(err)
-    });
+    channel = channel.clean()
+    if (this.state.streams.get(channel)) {
+      this.props.client.join(channel).then((data) => {
+        // Only join channels that are online
+        this.props.dispatch(joinChannel(channel))
 
-    this.props.mtcEE.emitEvent('joinChannelEvent', [channel.toLowerCase()])
+        this.updateStreamersByCache()
+        
+        this.props.mtcEE.emitEvent('joinChannelEvent', [channel])
+      }).catch(function (err) {
+        console.error(err)
+      });
+    } else {
+      // Remove channels that are offline.
+      console.log(`${channel} not found/online. Will not join.`)
+    }
   }
 
   leave(channel) {
-    this.props.client.part(channel).then((data) => {
+    channel = channel.clean()
+    if (this.state.streams.get(channel)) {
+      this.props.client.part(channel).then((data) => {
 
-      this.props.dispatch(leaveChannel(channel.toLowerCase()))
+        this.props.dispatch(leaveChannel(channel))
+  
+        this.updateStreamersByCache()
+  
+        this.props.mtcEE.emitEvent('leaveChannelEvent', [channel])
+      }).catch(function (err) {
+        console.error(err)
+      });
+    }  else {
+      // Remove channels that are offline.
+      console.log(`${channel} not found. Will not leave.`)
+    }
 
-      this.updateStreamersByCache()
-
-    }).catch(function (err) {
-      console.error(err)
-    });
-
-    this.props.mtcEE.emitEvent('leaveChannelEvent', [channel.toLowerCase()])
   }
 
   render() {
@@ -330,6 +343,7 @@ let ChannelManagerCSS = {
     textOverflow: 'ellipsis'
   },
 }
+
 
 function mapStateToChannelManager(state) {
   return {

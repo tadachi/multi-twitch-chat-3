@@ -55,12 +55,14 @@ class App extends Component {
     this.state = {
       drawerOpen: true,
       client: null,
-      oAuth: null
+      oAuth: null,
+      user_logo: null,
+      name: null,
     }
 
     this.options = {
       options: {
-        debug: true
+        debug: false
       },
       connection: {
         reconnect: true
@@ -109,6 +111,7 @@ class App extends Component {
     }
 
     const req = await axios.request(config).then((response) => {
+      console.log(response)
       return response
     })
 
@@ -118,11 +121,10 @@ class App extends Component {
   render() {
     const onExpanded = this.state.drawerOpen === true ? expanded : ''
 
-    const login = this.state.oAuth ? 
-      null :
-      // <LoginButton client_id={client_id} style={loginButton} disabled={true} color={'primary'} /> :
-      <LoginButton client_id={client_id} style={loginButton} color={'primary'} />
-
+    const login = !this.state.oAuth ? 
+      <LoginButton client_id={client_id} style={loginButton} color={'primary'} /> :
+      null 
+      
     const channelManager = this.state.client ?
       <ChannelManager client={this.state.client} client_id={client_id} oAuth={this.state.oAuth} mtcEE={MultiTwitchChatEE} loggedIn={true} /> :
       null
@@ -138,6 +140,7 @@ class App extends Component {
             <Paper style={paperStyle}>
               <Clock />
               {login}
+              {/* {setTimeout(() => {login}, 2000)} */}
             </Paper>
             {channelManager}
           </AppDrawer>

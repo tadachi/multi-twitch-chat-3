@@ -558,3 +558,20 @@ class LoginButton extends Component {
 }
 
 export default LoginButton
+
+this.updateChannelsID = setInterval(
+  () => {
+    this.setState({
+      channels: Array.from(this.props.channels.keys()).sort()
+    })
+    let new_joined_channels = this.state.joined_channels
+    for (let i = 0; i < this.state.channels.length; i++) {
+      if (this.props.channels.get(this.state.channels[i]).joined === true) {
+        joined_channels.push(<option style={{ backgroundColor: 'black' }} value={i} key={this.state.channels[i]}>{this.state.channels[i]}</option>)
+      }
+    }
+    this.setState({
+      channels: Array.from(this.props.channels.keys()).sort()
+    })
+  }, 10000
+)

@@ -11,7 +11,7 @@ for (const p of [300, 600, 900]) {
 }
 
 for (const p of [300, 600, 900]) {
-  colors.push(pink[p])
+  colors.push(purple[p])
 }
 
 for (const p of [300, 600, 900]) {
