@@ -77,7 +77,7 @@ class ChannelManager extends Component {
           this.updateStreamers()
         }
       },
-      300000
+      600000
     )
     this.updateStreamersCachedTimerID = setInterval(
       () => {
@@ -131,6 +131,29 @@ class ChannelManager extends Component {
 
       }
     }, 4000)
+
+    //mtcEE events
+    // Sync this.props.channels with network streams
+    this.props.mtcEE.on('updateStreamersByNetworkEvent', (streams) => {
+      for (const channel of this.props.channels.keys()) {
+        let stay = true
+        for (const stream of streams) {
+          if (channel === stream) {
+            stay = true
+            break
+            // Everything is good
+          } else {
+            stay = false
+          }
+        }
+        if (stay === false) {
+          console.log(`Leaving ${channel} because it went offline`)
+          this.leave(channel)
+        }
+      }
+    })
+    // this.props.mtcEE.on('sendJoinedChannelsEvent', (joined_channels) => {
+    // })
   }
 
   componentWillUnmount() {
@@ -157,28 +180,29 @@ class ChannelManager extends Component {
 
         response.data.streams.map((stream) => {
           const displayName = `#${stream.channel.display_name}`
-          const name = `#${stream.channel.name}`
+          const name = `#${stream.channel.name.clean()}`
           const game = stream.game
           const viewers = stream.viewers
           const status = stream.channel.status
-
           let joined = false
-          if (this.props.channels.has(name.clean())) {
-            joined = this.props.channels.get(name.clean()).joined
-            // joined === true ? color.backgroundColor = ch.color : color.backgroundColor = '#000000'
+          let color = '#000000'
+
+          if (this.props.channels.has(name)) {
+            joined = this.props.channels.get(name).joined
+            joined === true ? color = this.props.channels.get(name).color : color = '#000000'
           }
 
           const button = joined ?
             <IconButton className='material-icons' classes={{ root: this.props.classes.iconButton }}>
-              <HighlightOff classes={{ root: this.props.classes.leaveIcon }} onClick={this.leave.bind(this, name.clean())} />
+              <HighlightOff classes={{ root: this.props.classes.leaveIcon }} onClick={this.leave.bind(this, name)} />
             </IconButton> :
             <IconButton className='material-icons' classes={{ root: this.props.classes.iconButton }}>
-              <AddCircleOutline classes={{ root: this.props.classes.joinIcon }} onClick={this.join.bind(this, name.clean())} />
+              <AddCircleOutline classes={{ root: this.props.classes.joinIcon }} onClick={this.join.bind(this, name)} />
             </IconButton>
 
           new_streams.set(
             name.clean(),
-            <Paper style={ChannelManagerCSS.item} key={displayName.clean()}>
+            <Paper style={{ ...ChannelManagerCSS.item, backgroundColor: color }} key={name}>
               <div style={ChannelManagerCSS.streamer}>{displayName}</div>
               <div style={{ textAlign: 'right', fontSize: '10px' }} >
                 {button}
@@ -191,7 +215,7 @@ class ChannelManager extends Component {
               <div style={ChannelManagerCSS.viewers}>{viewers}</div>
             </Paper>
           )
-          return true
+          return new_streams
         })
 
         this.setState({
@@ -211,28 +235,29 @@ class ChannelManager extends Component {
     if (this.state.responseCache) {
       this.state.responseCache.data.streams.map((stream) => {
         const displayName = `#${stream.channel.display_name}`
-        const name = `#${stream.channel.name}`
+        const name = `#${stream.channel.name.clean()}`
         const game = stream.game
         const viewers = stream.viewers
         const status = stream.channel.status
-
         let joined = false
-        if (this.props.channels.has(name.clean())) {
-          joined = this.props.channels.get(name.clean()).joined
-          // joined === true ? color.backgroundColor = ch.color : color.backgroundColor = '#000000'
+        let color = '#000000'
+
+        if (this.props.channels.has(name)) {
+          joined = this.props.channels.get(name).joined
+          joined === true ? color = this.props.channels.get(name).color : color = '#000000'
         }
 
         const button = joined ?
           <IconButton className='material-icons' classes={{ root: this.props.classes.iconButton }}>
-            <HighlightOff classes={{ root: this.props.classes.leaveIcon }} onClick={this.leave.bind(this, name.clean())} />
+            <HighlightOff classes={{ root: this.props.classes.leaveIcon }} onClick={this.leave.bind(this, name)} />
           </IconButton> :
           <IconButton className='material-icons' classes={{ root: this.props.classes.iconButton }}>
-            <AddCircleOutline classes={{ root: this.props.classes.joinIcon }} onClick={this.join.bind(this, name.clean())} />
+            <AddCircleOutline classes={{ root: this.props.classes.joinIcon }} onClick={this.join.bind(this, name)} />
           </IconButton>
 
         new_streams.set(
           name.clean(),
-          <Paper style={ChannelManagerCSS.item} key={displayName.clean()}>
+          <Paper style={{ ...ChannelManagerCSS.item, backgroundColor: color }} key={name}>
             <div style={ChannelManagerCSS.streamer}>{displayName}</div>
             <div style={{ textAlign: 'right', fontSize: '10px' }} >
               {button}
@@ -245,7 +270,8 @@ class ChannelManager extends Component {
             <div style={ChannelManagerCSS.viewers}>{viewers}</div>
           </Paper>
         )
-        return true
+
+        return new_streams
       })
 
       this.setState({
@@ -264,7 +290,7 @@ class ChannelManager extends Component {
         this.props.dispatch(joinChannel(channel))
 
         this.updateStreamersByCache()
-        
+
         this.props.mtcEE.emitEvent('joinChannelEvent', [channel])
       }).catch(function (err) {
         console.error(err)
@@ -281,14 +307,14 @@ class ChannelManager extends Component {
       this.props.client.part(channel).then((data) => {
 
         this.props.dispatch(leaveChannel(channel))
-  
+
         this.updateStreamersByCache()
-  
+
         this.props.mtcEE.emitEvent('leaveChannelEvent', [channel])
       }).catch(function (err) {
         console.error(err)
       });
-    }  else {
+    } else {
       // Remove channels that are offline.
       console.log(`${channel} not found. Will not leave.`)
     }
@@ -307,7 +333,6 @@ class ChannelManager extends Component {
 
 let ChannelManagerCSS = {
   item: {
-    backgroundColor: 'black',
     display: 'grid',
     gridTemplateColumns: '75% 25%',
     gridTemplateRows: '75% 25%',

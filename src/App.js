@@ -7,6 +7,7 @@ import AppDrawer from './components/AppDrawer'
 import ChannelManager from './components/AppDrawerComponents/ChannelManager'
 import Chat from './components/Chat'
 import Clock from './components/Clock'
+import UserPaper from './components/UserPaper'
 // import ColorPickerGrid from './components/ColorPickerGrid'
 // Material-ui
 import Paper from 'material-ui/Paper';
@@ -26,6 +27,7 @@ updateStreamersByCacheEvent
 updateStreamersByNetworkEvent
 joinChannelEvent
 leaveChannelEvent
+sendJoinedChannelsEvent
 */
 
 const drawerWidth = 200
@@ -83,12 +85,15 @@ class App extends Component {
     if (getParams(document.location.hash)['access_token']) {
       const token = getParams(document.location.hash)['access_token']
       this.getUserObject(token).then((response) => {
+        console.log(response)
         if (response.status === 200) {
           this.options.identity.username = response.data.name
           this.options.identity.password = token
           this.setState({
             oAuth: token,
-            client: new tmi.client(this.options)
+            client: new tmi.client(this.options),
+            user_logo: response.data.logo,
+            name: response.data.name,
           })
           this.state.client.connect()
         } else {
@@ -111,7 +116,6 @@ class App extends Component {
     }
 
     const req = await axios.request(config).then((response) => {
-      console.log(response)
       return response
     })
 
@@ -121,10 +125,11 @@ class App extends Component {
   render() {
     const onExpanded = this.state.drawerOpen === true ? expanded : ''
 
-    const login = !this.state.oAuth ? 
-      <LoginButton client_id={client_id} style={loginButton} color={'primary'} /> :
-      null 
-      
+    const login = this.state.oAuth ?
+      null :
+      <LoginButton client_id={client_id} style={loginButton} color={'primary'} />
+
+
     const channelManager = this.state.client ?
       <ChannelManager client={this.state.client} client_id={client_id} oAuth={this.state.oAuth} mtcEE={MultiTwitchChatEE} loggedIn={true} /> :
       null
@@ -133,6 +138,11 @@ class App extends Component {
       <Chat style={{ ...onExpanded }} client={this.state.client} mtcEE={MultiTwitchChatEE} drawerWidth={drawerWidth} /> :
       null
 
+    const user = this.state.oAuth ?
+      <UserPaper name={this.state.name} img={this.state.user_logo} /> :
+      null
+
+
     return (
       <MuiThemeProvider theme={theme}>
         <div id={'container'} >
@@ -140,7 +150,7 @@ class App extends Component {
             <Paper style={paperStyle}>
               <Clock />
               {login}
-              {/* {setTimeout(() => {login}, 2000)} */}
+              {user}
             </Paper>
             {channelManager}
           </AppDrawer>

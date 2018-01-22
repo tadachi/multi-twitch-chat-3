@@ -29,5 +29,4 @@ class AppDrawer extends React.Component {
   }
 }
 
-// export default AppDrawer
 export default withStyles(styles)(AppDrawer)
