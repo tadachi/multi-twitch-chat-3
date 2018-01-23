@@ -32,7 +32,6 @@ const channelReducer = (state = { channels: new Map() }, actions) => {
         // Keep track of the color and join status
         const color = state.channels.get(actions.channel).color
         new_channels = state.channels.set(actions.channel, { joined: false, color: color })
-        console.log(new_channels.get(actions.channel))
       } else {
         console.log(`${actions.channel} Channel not found.`)
       }

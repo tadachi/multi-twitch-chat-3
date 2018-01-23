@@ -140,10 +140,11 @@ class ChannelManager extends Component {
     //mtcEE events
     // Sync this.props.channels with network streams
     this.props.mtcEE.on('updateStreamersByNetworkEvent', (streams) => {
-      for (const channel of this.props.channels.keys()) {
+      for (const [channel_key, value] of Object.entries(this.props.channels)) {
+        const joined = value.joined
         let stay = true
         for (const stream of streams) {
-          if (channel === stream) {
+          if (channel_key === stream) {
             stay = true
             break
             // Everything is good
@@ -151,9 +152,9 @@ class ChannelManager extends Component {
             stay = false
           }
         }
-        if (stay === false) {
-          console.log(`Leaving ${channel} because it went offline`)
-          this.leave(channel.clean())
+        if (stay === false && joined === true) {
+          console.log(`Leaving ${channel_key} because it went offline`)
+          this.leave(channel_key.clean())
         }
       }
     })

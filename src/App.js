@@ -85,7 +85,6 @@ class App extends Component {
     if (getParams(document.location.hash)['access_token']) {
       const token = getParams(document.location.hash)['access_token']
       this.getUserObject(token).then((response) => {
-        console.log(response)
         if (response.status === 200) {
           this.options.identity.username = response.data.name
           this.options.identity.password = token

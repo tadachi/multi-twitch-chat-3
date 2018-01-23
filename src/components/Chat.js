@@ -61,7 +61,7 @@ async function goFFZ(name) {
         // console.log(data)
         for (const item of data) {
           // console.log(`${item.name} ${item.urls[1]}`)
-          ffz_emotes_map.get(name).set(item.name, {url: item.urls[1], h:item.height} )
+          ffz_emotes_map.get(name).set(item.name, item.urls[1])
         }
         // console.log(ffz_emotes_map)
         return data
@@ -250,15 +250,17 @@ class Chat extends Component {
     for (let i in split_message) {
       const code = split_message[i]
       if (this.props.twitch_emotes_map.has(code)) {
-        split_message[i] = `<img style='vertical-align: middle; padding: 1px;' height='35' src=${twitch_emotes_map.get(code)} />`
+        split_message[i] = `<img style='vertical-align: middle; padding: 1px;' height='38' src=${twitch_emotes_map.get(code)} />`
+        continue
       }
       if (this.props.bttv_emotes_map.has(code)) {
-        split_message[i] = `<img style='vertical-align: middle; padding: 1px;' height='35' src=${bttv_emotes_map.get(code)} />`
+        split_message[i] = `<img style='vertical-align: middle; padding: 1px;' height='38' src=${bttv_emotes_map.get(code)} />`
+        continue
       }
       if (ffz_emotes_map.has(channel)) {
-        console.log(ffz_emotes_map)
-        if (ffz_emotes_map.get(channel).values().length > 0 ) {
-          split_message[i] = `<img style='vertical-align: middle; padding: 1px;' height='${ffz_emotes_map.get(channel).get(code).h}' src=${ffz_emotes_map.get(channel).get(code).url} />`
+        // console.log(ffz_emotes_map)
+        if (split_message[i] === ffz_emotes_map.get(channel).get(code)) {
+          split_message[i] = `<img style='vertical-align: middle; padding: 1px;' height='38' src=${ffz_emotes_map.get(channel).get(code)} />`
         }
       }
     }
