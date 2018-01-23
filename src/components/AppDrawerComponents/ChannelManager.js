@@ -77,7 +77,7 @@ class ChannelManager extends Component {
           this.updateStreamers()
         }
       },
-      600000
+      300000
     )
     this.updateStreamersCachedTimerID = setInterval(
       () => {
@@ -128,7 +128,12 @@ class ChannelManager extends Component {
         this.join('#chuboh')
         this.join('#UFotekkie')
         this.join('#Ty2358')
-
+        this.join('#sakegeist')
+        this.join('#klaige')
+        this.join('#Go1den')
+        this.join('#capnclever')
+        this.join('#omnigamer')
+        this.join('#sylux98')
       }
     }, 4000)
 
@@ -148,7 +153,7 @@ class ChannelManager extends Component {
         }
         if (stay === false) {
           console.log(`Leaving ${channel} because it went offline`)
-          this.leave(channel)
+          this.leave(channel.clean())
         }
       }
     })
@@ -171,6 +176,9 @@ class ChannelManager extends Component {
     }
 
     const req = await axios.request(config)
+      .catch(function (err) {
+        return undefined
+      })
       .then((response) => {
         let new_streams = new Map()
 
@@ -224,7 +232,7 @@ class ChannelManager extends Component {
 
         this.props.mtcEE.emitEvent(`updateStreamersByNetworkEvent`, [Array.from(new_streams.keys())]);
 
-        return true
+        return this.state.streams
       })
     return req
   }
@@ -303,7 +311,7 @@ class ChannelManager extends Component {
 
   leave(channel) {
     channel = channel.clean()
-    if (this.state.streams.get(channel)) {
+    if (this.props.channels.get(channel)) {
       this.props.client.part(channel).then((data) => {
 
         this.props.dispatch(leaveChannel(channel))
@@ -314,11 +322,7 @@ class ChannelManager extends Component {
       }).catch(function (err) {
         console.error(err)
       });
-    } else {
-      // Remove channels that are offline.
-      console.log(`${channel} not found. Will not leave.`)
     }
-
   }
 
   render() {

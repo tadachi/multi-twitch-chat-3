@@ -7,35 +7,36 @@ const channelReducer = (state = { channels: new Map() }, actions) => {
   switch (actions.type) {
     case 'JOIN_CHANNEL': {
       let new_channels = state.channels
-      
-      if (state.channels.get(actions.channel)) { // e.g '#werster, undefined, etc
-        // Keep track of the color
-        // const color = state.channels.get(actions.channel).color
-        // new_channels = state.channels.set(actions.channel, {joined: true, color: color})
-        
-        // Random color upon joining again.
-        const new_color = web_safe_colors[randomIntFromInterval(0, max_length)]
-        new_channels = state.channels.set(actions.channel, {joined: true, color: new_color})
-      } else {
-        const new_color = web_safe_colors[randomIntFromInterval(0, max_length)]
-        new_channels = state.channels.set(actions.channel, {joined: true, color: new_color})
-      }
-      
+      // Keep track of the color
+      // const color = state.channels.get(actions.channel).color
+      // new_channels = state.channels.set(actions.channel, {joined: true, color: color})
+
+      // Random color upon joining again.
+      const new_color = web_safe_colors[randomIntFromInterval(0, max_length)]
+      new_channels = state.channels.set(actions.channel, { joined: true, color: new_color })
+      // if (state.channels.get(actions.channel)) { // e.g '#werster, undefined, etc
+
+      // } else {
+      //   const new_color = web_safe_colors[randomIntFromInterval(0, max_length)]
+      //   new_channels = state.channels.set(actions.channel, { joined: true, color: new_color })
+      // }
+
       state = { channels: new_channels }
       break
     }
     case 'LEAVE_CHANNEL': {
       let new_channels = state.channels
-
+      console.log(actions.channel)
       if (state.channels.get(actions.channel)) {
         // new_channels.delete(actions.channel)
         // Keep track of the color and join status
         const color = state.channels.get(actions.channel).color
-        new_channels = state.channels.set(actions.channel, {joined: false, color: color})
+        new_channels = state.channels.set(actions.channel, { joined: false, color: color })
+        console.log(new_channels.get(actions.channel))
       } else {
-        console.error(`${actions.channel} Channel not found.`)
+        console.log(`${actions.channel} Channel not found.`)
       }
-      
+
       state = { channels: new_channels }
       break
     }
@@ -45,7 +46,7 @@ const channelReducer = (state = { channels: new Map() }, actions) => {
       if (state.channels.get(actions.channel)) {
         new_channels.delete(actions.channel)
       } else {
-        console.error(`${actions.channel} channel not found.`)
+        console.log(`${actions.channel} channel not found.`)
       }
       state = { channels: new_channels }
       break
@@ -58,8 +59,8 @@ const channelReducer = (state = { channels: new Map() }, actions) => {
   return state
 }
 
-function randomIntFromInterval(min,max) {
-    return Math.floor(Math.random()*(max-min+1)+min);
+function randomIntFromInterval(min, max) {
+  return Math.floor(Math.random() * (max - min + 1) + min);
 }
 
 export default channelReducer

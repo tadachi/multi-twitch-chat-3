@@ -3,6 +3,7 @@ import ReactHtmlParser from 'react-html-parser';
 import { connect } from 'react-redux'
 import moment from 'moment'
 import axios from 'axios'
+import '../App.css'
 
 // Material-ui
 import Select from 'material-ui/Select';
@@ -13,8 +14,10 @@ import ClearAll from 'material-ui-icons/ClearAll'
 import twitch_emotes from '../emotes/twitch_emotes'
 import bttv_emotes from '../emotes/bttv_emotes'
 
-import '../App.css'
-// import { List, ListItem } from 'material-ui/List';
+
+String.prototype.removeHashtag = function () {
+  return this.replace('#', "").toLowerCase();
+}
 
 // Emotes
 // http://static-cdn.jtvnw.net/emoticons/v1/356/3.0
@@ -29,28 +32,47 @@ for (let i = 0; i < bttv_emotes.length; i++) {
   bttv_emotes_map.set(bttv_emotes[i].code, `http://cdn.betterttv.net/emote/${bttv_emotes[i].id}/3x`)
 }
 
-
+// FFZ
 let ffz_emotes_map = new Map()
 
-async function getFFZ(name) {
+async function getFFZEmotes(name) {
   let config = {
     url: `room/${name}`,
     method: 'get',
     baseURL: 'https://api.frankerfacez.com/v1/',
     params: { limit: 100 }
   }
-  
+
   const req = await axios.request(config).then((response) => {
-    console.log(response.data.room)
     return response
+  }).catch(function (err) {
+    return undefined
   })
 
   return req
 }
 
-let response = getFFZ('landail')
+async function goFFZ(name) {
+  const req = await getFFZEmotes(name)
+    .then((response) => {
+      if (response) {
+        ffz_emotes_map.set(name, new Map())
+        const data = Object.values(response.data.sets)[0].emoticons
+        // console.log(data)
+        for (const item of data) {
+          // console.log(`${item.name} ${item.urls[1]}`)
+          ffz_emotes_map.get(name).set(item.name, {url: item.urls[1], h:item.height} )
+        }
+        // console.log(ffz_emotes_map)
+        return data
+      } else {
+        // console.log(ffz_emotes_map)
+        return undefined
+      }
+    })
 
-
+  return req
+}
 
 class Chat extends Component {
   constructor(props) {
@@ -63,7 +85,6 @@ class Chat extends Component {
       msg_id: 0,
       width: window.innerWidth,
       height: window.innerHeight - 10,
-      channels: Array.from(props.channels.keys()).sort(),
       channel: 0,
       joined_channels: []
     }
@@ -124,7 +145,7 @@ class Chat extends Component {
           {moment().format('h:mm:ss')} {channel}
         </span>
         <span style={{ color: `${userstate['color']}`, marginLeft: '2px', }}>{userstate['display-name'] + ': '} </span>
-        <span style={{}}>{this.parseForEmotes(message)}</span>
+        <span style={{}}>{this.parseForEmotes(message, channel.removeHashtag())}</span>
       </div>
 
       this.processMessage(channel, m)
@@ -138,24 +159,27 @@ class Chat extends Component {
 
     // mtcEE events
     let update = () => {
-      this.setState({
-        channels: Array.from(this.props.channels.keys()).sort(),
-      })
+      const channels = Array.from(this.props.channels.keys()).sort()
       let new_joined_channels = []
-      const channels = this.state.channels
+      let new_channels = []
       let i = 0
       for (const channel of channels) {
-        if (this.props.channels.get(channel).joined)
+        if (this.props.channels.get(channel).joined === true) {
+          new_channels.push(channel)
           new_joined_channels.push(<option style={{ backgroundColor: 'black' }} value={i} key={channel}>{channel}</option>)
-        i++
+          i++
+        }
       }
       this.setState({
-        channels: Array.from(this.props.channels.keys()).sort(),
-        joined_channels: new_joined_channels
+        channels: new_channels,
+        joined_channels: new_joined_channels,
+        channel: 0
       })
-      console.log(this.props.channels)
+      // console.log(this.state.joined_channels.length)
+      // console.log(this.props.channels)
     }
     this.props.mtcEE.on('joinChannelEvent', (channel) => {
+      goFFZ(channel.removeHashtag())
       update()
     })
     this.props.mtcEE.on('leaveChannelEvent', (channel) => {
@@ -168,13 +192,6 @@ class Chat extends Component {
     this.props.mtcEE.on('updateStreamersByCache', (channels) => {
       console.log(channels)
     })
-
-    // this.updateChannelsID = setInterval(
-    //   () => {
-    //     this.props.mtcEE.emit('sendJoinedChannelsEvent', [this.props.channels])
-    //   },
-    //   10000
-    // )
   }
 
   componentWillUnmount() {
@@ -228,15 +245,21 @@ class Chat extends Component {
     })
   }
 
-  parseForEmotes(message) {
+  parseForEmotes(message, channel) {
     let split_message = message.split(' ')
     for (let i in split_message) {
       const code = split_message[i]
       if (this.props.twitch_emotes_map.has(code)) {
-        split_message[i] = `<img style='vertical-align: middle; padding: 1px;' height='30' width='26' src=${twitch_emotes_map.get(code)} />`
+        split_message[i] = `<img style='vertical-align: middle; padding: 1px;' height='35' src=${twitch_emotes_map.get(code)} />`
       }
       if (this.props.bttv_emotes_map.has(code)) {
-        split_message[i] = `<img style='vertical-align: middle; padding: 1px;' height='30' width='26' src=${bttv_emotes_map.get(code)} />`
+        split_message[i] = `<img style='vertical-align: middle; padding: 1px;' height='35' src=${bttv_emotes_map.get(code)} />`
+      }
+      if (ffz_emotes_map.has(channel)) {
+        console.log(ffz_emotes_map)
+        if (ffz_emotes_map.get(channel).values().length > 0 ) {
+          split_message[i] = `<img style='vertical-align: middle; padding: 1px;' height='${ffz_emotes_map.get(channel).get(code).h}' src=${ffz_emotes_map.get(channel).get(code).url} />`
+        }
       }
     }
     return ReactHtmlParser(split_message.join(' '));
@@ -244,7 +267,7 @@ class Chat extends Component {
 
   sendMessage(event) {
     const message = this.messageInput.value
-    let channel = this.state.channels[this.state.channel]
+    let channel = this.state.joined_channels[this.state.channel].key
     let new_your_messages = this.state.your_messages
     let parsedMessage = ''
 
@@ -258,6 +281,7 @@ class Chat extends Component {
         this.setState({
           your_messages: new_your_messages
         })
+        this.scrollToBottom()
       }
 
       this.props.client.say(channel, message).then(function (data) {
@@ -267,9 +291,6 @@ class Chat extends Component {
       });
 
       this.messageInput.value = ''
-
-      this.scrollToBottom()
-      return
     }
   }
 
@@ -277,7 +298,7 @@ class Chat extends Component {
     let new_c = this.state.channel
 
     if (event.key === 'ArrowUp') {
-      if (this.state.channel < this.state.channels.length - 1) {
+      if (this.state.channel < this.state.joined_channels.length - 1) {
         new_c += 1
         this.setState({
           channel: new_c
@@ -290,13 +311,13 @@ class Chat extends Component {
       }
     }
     if (event.key === 'ArrowDown') {
-      if (this.state.channel < this.state.channels.length && this.state.channel > 0) {
+      if (this.state.channel < this.state.joined_channels.length && this.state.channel > 0) {
         new_c -= 1
         this.setState({
           channel: new_c
         })
       } else {
-        new_c = this.state.channels.length - 1
+        new_c = this.state.joined_channels.length - 1
         this.setState({
           channel: new_c
         })
@@ -351,12 +372,11 @@ class Chat extends Component {
 
     const textAreaChat = this.state.joined_channels.length > 0 ?
       <textarea style={{ color: 'white', width: '65%', minWidth: '150px', height: `${chatH}px`, backgroundColor: 'black', resize: 'none', overflowX: 'hidden' }}
-        ref={(el) => { this.messageInput = el }} placeholder={`Send a message to ${this.state.channels[this.state.channel]}..`}
+        ref={(el) => { this.messageInput = el }} placeholder={`Send a message to ${this.state.joined_channels[this.state.channel].key}..`}
         onKeyPress={this.sendMessage.bind(this)} onKeyDown={this.switchChannel.bind(this)}>
       </textarea> :
       <textarea style={{ color: 'white', width: '65%', minWidth: '150px', height: `${chatH}px`, backgroundColor: 'black', resize: 'none', overflowX: 'hidden' }}
-        ref={(el) => { this.messageInput = el }} placeholder={`Join a channel to chat!`} disabled
-      >
+        ref={(el) => { this.messageInput = el }} placeholder={`Join a channel to chat!`} disabled>
       </textarea>
 
     return (
