@@ -1,4 +1,6 @@
 import web_safe_colors from '../web_safe_colors'
+import {mapToJson, JsonToMap} from '../JsonMapUtil'
+import {LOCAL_STORAGE, CHANNELS} from '../localStorageWrapper'
 
 const max_length = web_safe_colors.length
 
@@ -21,6 +23,7 @@ const channelReducer = (state = { channels: new Map() }, actions) => {
       //   new_channels = state.channels.set(actions.channel, { joined: true, color: new_color })
       // }
 
+      LOCAL_STORAGE.setItem(CHANNELS, mapToJson(new_channels))
       state = { channels: new_channels }
       break
     }
@@ -36,6 +39,7 @@ const channelReducer = (state = { channels: new Map() }, actions) => {
         console.log(`${actions.channel} Channel not found.`)
       }
 
+      LOCAL_STORAGE.setItem(CHANNELS, mapToJson(new_channels))
       state = { channels: new_channels }
       break
     }
