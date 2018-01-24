@@ -10,6 +10,8 @@ import AddCircleOutline from 'material-ui-icons/AddCircleOutline'
 import HighlightOff from 'material-ui-icons/HighlightOff'
 // Utilties
 import axios from 'axios'
+import {jsonToMap} from '../../JsonMapUtil'
+import {LOCAL_STORAGE, CHANNELS} from '../../localStorageWrapper'
 
 String.prototype.clean = function () {
   return this.replace(/ /g, "_").toLowerCase();
@@ -77,7 +79,7 @@ class ChannelManager extends Component {
           this.updateStreamers()
         }
       },
-      300000
+      50000
     )
     this.updateStreamersCachedTimerID = setInterval(
       () => {
@@ -88,6 +90,7 @@ class ChannelManager extends Component {
 
     setTimeout(() => {
       if (this.state.loggedIn) {
+        console.log(jsonToMap(localStorage.getItem(CHANNELS)))
         // this.join('#TwitchPresents')
         // this.join('#Cirno_TV')
         // this.join('#destiny')
@@ -134,27 +137,37 @@ class ChannelManager extends Component {
         this.join('#capnclever')
         this.join('#omnigamer')
         this.join('#sylux98')
+        this.join('#swordsmankirby')
+        this.join('#Macaw45')
+        this.join('#freddeh')
+        this.join('#ghou02')
+        this.join('#tterraj42')
+        this.join('#superKing13')
       }
     }, 4000)
 
     //mtcEE events
     // Sync this.props.channels with network streams
     this.props.mtcEE.on('updateStreamersByNetworkEvent', (streams) => {
-      for (const [channel_key, value] of Object.entries(this.props.channels)) {
-        const joined = value.joined
-        let stay = true
-        for (const stream of streams) {
-          if (channel_key === stream) {
-            stay = true
-            break
-            // Everything is good
-          } else {
-            stay = false
+      if(this.props.channels) {
+        console.log(this.props.channels)
+        for (const [channel_key, value] of this.props.channels.entries()) {
+          const joined = value.joined
+          let stay = true
+          for (const stream of streams) {
+            if (channel_key === stream) {
+              stay = true
+              break
+              // Everything is good
+            } else {
+              stay = false
+            }
           }
-        }
-        if (stay === false && joined === true) {
-          console.log(`Leaving ${channel_key} because it went offline`)
-          this.leave(channel_key.clean())
+          if (stay === false) {
+            console.log(joined)
+            console.log(`Leaving ${channel_key} because it went offline`)
+            this.leave(channel_key.clean())
+          }
         }
       }
     })
