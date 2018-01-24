@@ -14,8 +14,7 @@ import ClearAll from 'material-ui-icons/ClearAll'
 import twitch_emotes from '../emotes/twitch_emotes'
 import bttv_emotes from '../emotes/bttv_emotes'
 
-
-String.prototype.removeHashtag = function () {
+String.prototype.removeHashtag = function() {
   return this.replace('#', "").toLowerCase();
 }
 
@@ -45,7 +44,7 @@ async function getFFZEmotes(name) {
 
   const req = await axios.request(config).then((response) => {
     return response
-  }).catch(function (err) {
+  }).catch((err) => {
     return undefined
   })
 
@@ -187,7 +186,7 @@ class Chat extends Component {
     })
     this.props.mtcEE.on('updateStreamersByNetworkEvent', (channels) => {
       // Use the network event to leave/remove those channels when streamers go offline, 
-      // console.log(channels)
+      // const channels = this.props.channels
     })
     this.props.mtcEE.on('updateStreamersByCache', (channels) => {
       console.log(channels)
@@ -251,15 +250,13 @@ class Chat extends Component {
       const code = split_message[i]
       if (this.props.twitch_emotes_map.has(code)) {
         split_message[i] = `<img style='vertical-align: middle; padding: 1px;' height='38' src=${twitch_emotes_map.get(code)} />`
-        continue
       }
       if (this.props.bttv_emotes_map.has(code)) {
         split_message[i] = `<img style='vertical-align: middle; padding: 1px;' height='38' src=${bttv_emotes_map.get(code)} />`
-        continue
       }
       if (ffz_emotes_map.has(channel)) {
         // console.log(ffz_emotes_map)
-        if (split_message[i] === ffz_emotes_map.get(channel).get(code)) {
+        if (ffz_emotes_map.get(channel).has(code)) {
           split_message[i] = `<img style='vertical-align: middle; padding: 1px;' height='38' src=${ffz_emotes_map.get(channel).get(code)} />`
         }
       }
@@ -280,15 +277,12 @@ class Chat extends Component {
 
       if (parsedMessage !== '') {
         new_your_messages.push(parsedMessage)
-        this.setState({
-          your_messages: new_your_messages
-        })
-        this.scrollToBottom()
       }
 
-      this.props.client.say(channel, message).then(function (data) {
+      this.props.client.say(channel, message).then((data) =>  {
+        this.scrollToBottom()
         console.log(`${channel} ${message}`)
-      }).catch(function (err) {
+      }).catch((err) =>  {
         console.log(err)
       });
 
@@ -333,6 +327,7 @@ class Chat extends Component {
   };
 
   handleChatScroll() {
+    // console.log(this.chatScroll.scrollHeight )
     if (this.chatScroll.scrollHeight - Math.ceil(this.chatScroll.scrollTop) <= this.chatScroll.clientHeight) {
       this.setState({
         scrollToEnd: true
@@ -348,7 +343,12 @@ class Chat extends Component {
   }
 
   scrollToBottom() {
-    this.messagesEnd.scrollIntoView({ behavior: "instant" })
+    this.setState({
+      scrollToEnd: true
+    })
+    const chat = document.getElementById('chat');
+    chat.scrollTop = chat.scrollHeight;
+    // this.messagesEnd.scrollIntoView({ behavior: "instant" })
   }
 
   clearChat() {
