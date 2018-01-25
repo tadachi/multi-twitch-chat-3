@@ -10,8 +10,9 @@ import AddCircleOutline from 'material-ui-icons/AddCircleOutline'
 import HighlightOff from 'material-ui-icons/HighlightOff'
 // Utilties
 import axios from 'axios'
-import {jsonToMap} from '../../JsonMapUtil'
-import {LOCAL_STORAGE, CHANNELS} from '../../localStorageWrapper'
+import {jsonToMap} from '../../util/JsonMapUtil'
+import {LOCAL_STORAGE, CHANNELS} from '../../util/localStorageWrapper'
+import moment from 'moment'
 
 String.prototype.clean = function () {
   return this.replace(/ /g, "_").toLowerCase();
@@ -79,18 +80,18 @@ class ChannelManager extends Component {
           this.updateStreamers()
         }
       },
-      50000
+      120000 // 2 minutes or 120 seconds
     )
     this.updateStreamersCachedTimerID = setInterval(
       () => {
         this.updateStreamersByCache()
       },
-      5000
+      5000 // 5 seconds
     )
 
     setTimeout(() => {
       if (this.state.loggedIn) {
-        console.log(jsonToMap(localStorage.getItem(CHANNELS)))
+        console.log(jsonToMap(LOCAL_STORAGE.getItem(CHANNELS)))
         // this.join('#TwitchPresents')
         // this.join('#Cirno_TV')
         // this.join('#destiny')
@@ -143,6 +144,9 @@ class ChannelManager extends Component {
         this.join('#ghou02')
         this.join('#tterraj42')
         this.join('#superKing13')
+        this.join('#CavemanDCJ')
+        this.join('#yagamoth')
+        this.join('#shadowJacky')
       }
     }, 4000)
 
@@ -150,9 +154,12 @@ class ChannelManager extends Component {
     // Sync this.props.channels with network streams
     this.props.mtcEE.on('updateStreamersByNetworkEvent', (streams) => {
       if(this.props.channels) {
-        console.log(this.props.channels)
+        // console.log(this.props.channels)
         for (const [channel_key, value] of this.props.channels.entries()) {
           const joined = value.joined
+          if (!joined) {
+            console.log(channel_key + ' ' + joined)
+          }
           let stay = true
           for (const stream of streams) {
             if (channel_key === stream) {
@@ -165,7 +172,7 @@ class ChannelManager extends Component {
           }
           if (stay === false) {
             console.log(joined)
-            console.log(`Leaving ${channel_key} because it went offline`)
+            console.log(`[${moment().format('h:mm:ss')}] Leaving ${channel_key} because it went offline`)
             this.leave(channel_key.clean())
           }
         }

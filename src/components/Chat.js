@@ -9,12 +9,14 @@ import '../App.css'
 import Select from 'material-ui/Select';
 import Settings from 'material-ui-icons/Settings'
 import ClearAll from 'material-ui-icons/ClearAll'
+import { grey600 } from 'material-ui/colors';
 
 // Utility
 import twitch_emotes from '../emotes/twitch_emotes'
 import bttv_emotes from '../emotes/bttv_emotes'
-
-String.prototype.removeHashtag = function() {
+import { LOCAL_STORAGE, MESSAGES, } from '../util/localStorageWrapper'
+import { arrayToJson, jsonToArray, } from '../util/JsonMapUtil'
+String.prototype.removeHashtag = function () {
   return this.replace('#', "").toLowerCase();
 }
 
@@ -81,12 +83,13 @@ class Chat extends Component {
       messages: [],
       your_messages: [],
       scrollToEnd: true,
-      msg_id: 0,
       width: window.innerWidth,
       height: window.innerHeight - 10,
       channel: 0,
       joined_channels: []
     }
+    this.msg_id = 0,
+      this.messageCache = []
     this.regex_channel = /\/\#\S+|\S+\ +/ //['/#Tod', /#Tod    '] OK ['#Tod', '#Tod  '] Not OK.
   }
 
@@ -114,6 +117,7 @@ class Chat extends Component {
 
     this.props.client.on('part', (channel, username, self) => {
       let new_c = this.state.channel
+
       if (new_c > 0) {
         this.setState({
           channel: new_c
@@ -129,25 +133,86 @@ class Chat extends Component {
       })
     });
 
-
     this.truncateTimerID = setInterval(
-      () => this.truncateMessages(),
+      () => {
+        console.log(this.state.messages)
+        this.truncateMessages()
+      },
       100000
     )
 
-    this.props.client.on('chat', (channel, userstate, message, self) => {
-      let m = <div style={{ marginLeft: '5px', padding: 0, }}>
+    let m = (channel, userstate, message, time) => {
+      return <div style={{ marginLeft: '5px', padding: 0, }}>
         <span style={{
           opacity: '0.8', fontSize: '10px', fontWeight: 'bold',
           overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis',
         }}>
-          {moment().format('h:mm:ss')} {channel}
+          {time} {channel}
         </span>
         <span style={{ color: `${userstate['color']}`, marginLeft: '2px', }}>{userstate['display-name'] + ': '} </span>
         <span style={{}}>{this.parseForEmotes(message, channel.removeHashtag())}</span>
       </div>
+    }
 
-      this.processMessage(channel, m)
+    let processMessage = (channel, message, opacity = 1) => {
+      let color = grey600
+      this.msg_id = this.msg_id + 1
+      this.props.channels.get(channel) ?
+        color = { backgroundColor: this.props.channels.get(channel).color } : 
+        color = { backgroundColor: grey600 }
+
+      return <div style={{ ...color, opacity: opacity }} channel={channel} key={this.msg_id}>
+        {message}
+      </div>
+    }
+
+    //Load past messages
+    if (LOCAL_STORAGE.getItem(MESSAGES)) {
+      const messageArrayObj = jsonToArray(LOCAL_STORAGE.getItem(MESSAGES))
+      let new_messages = this.state.messages
+      for (const obj of messageArrayObj) {
+        const channel = obj.channel
+        const userstate = obj.userstate
+        const message = obj.message
+        const time = obj.time
+
+        const msg = m(channel, userstate, message, time)
+        const new_message = processMessage(channel, msg, 0.75)
+        new_messages.push(new_message)
+      }
+
+      this.setState({
+        messages: new_messages
+      })
+
+    }
+
+    this.saveMessagesID = setInterval(
+      () => {
+        if (this.state.messages !== null) {
+          LOCAL_STORAGE.setItem(MESSAGES, arrayToJson(this.messageCache))
+        }
+      },
+      10000 // 10 seconds
+    )
+
+    this.props.client.on('chat', (channel, userstate, message, self) => {
+      const time = moment().format('h:mm:ss')
+
+      // Save messages incase user exits
+      const messageObj = { channel: channel, userstate: userstate, message: message, time: time }
+      this.messageCache.push(messageObj)
+      // Step 1
+      const msg = m(channel, userstate, message, time)
+      // Step 2
+      const new_message = processMessage(channel, msg)
+      // Step 3
+      let new_messages = this.state.messages
+      new_messages.push(new_message)
+
+      this.setState({
+        messages: new_messages
+      })
 
       if (this.state.scrollToEnd) {
         this.scrollToBottom()
@@ -162,6 +227,7 @@ class Chat extends Component {
       let new_joined_channels = []
       let new_channels = []
       let i = 0
+      let c = this.state.channel
       for (const channel of channels) {
         if (this.props.channels.get(channel).joined === true) {
           new_channels.push(channel)
@@ -169,13 +235,14 @@ class Chat extends Component {
           i++
         }
       }
+      if (c > new_joined_channels.length) {
+        c = 0
+      }
       this.setState({
         channels: new_channels,
         joined_channels: new_joined_channels,
-        channel: 0
+        channel: c
       })
-      // console.log(this.state.joined_channels.length)
-      // console.log(this.props.channels)
     }
     this.props.mtcEE.on('joinChannelEvent', (channel) => {
       goFFZ(channel.removeHashtag())
@@ -186,10 +253,8 @@ class Chat extends Component {
     })
     this.props.mtcEE.on('updateStreamersByNetworkEvent', (channels) => {
       // Use the network event to leave/remove those channels when streamers go offline, 
-      // const channels = this.props.channels
     })
     this.props.mtcEE.on('updateStreamersByCache', (channels) => {
-      console.log(channels)
     })
   }
 
@@ -212,8 +277,8 @@ class Chat extends Component {
 
   truncateMessages() {
     const truncated_messages = this.state.messages
-    if (truncated_messages.length > 2000) {
-      truncated_messages.splice(0, 1000)
+    if (truncated_messages.length > 5000) {
+      truncated_messages.splice(0, 250)
       console.log(truncated_messages)
 
       this.setState({
@@ -221,27 +286,6 @@ class Chat extends Component {
       })
 
     }
-  }
-
-  processMessage(channel, message) {
-    let backgroundColor = 'black'
-    let new_msg_id = this.state.msg_id + 1
-    if (this.props.channels.get(channel)) {
-      backgroundColor = { backgroundColor: this.props.channels.get(channel).color }
-    }
-
-    let new_messages = this.state.messages
-
-    new_messages.push(
-      <div style={{ ...backgroundColor }} channel={channel} key={this.state.msg_id}>
-        {message}
-      </div>
-    )
-
-    this.setState({
-      msg_id: new_msg_id,
-      messages: new_messages
-    })
   }
 
   parseForEmotes(message, channel) {
@@ -279,10 +323,10 @@ class Chat extends Component {
         new_your_messages.push(parsedMessage)
       }
 
-      this.props.client.say(channel, message).then((data) =>  {
+      this.props.client.say(channel, message).then((data) => {
         this.scrollToBottom()
         console.log(`${channel} ${message}`)
-      }).catch((err) =>  {
+      }).catch((err) => {
         console.log(err)
       });
 
@@ -353,10 +397,11 @@ class Chat extends Component {
 
   clearChat() {
     const messages = []
-    const msg_id = 0
+    this.msg_id = 0
+    // Remove past saved twitch chat messages on clear
+    LOCAL_STORAGE.removeItem(MESSAGES)
     this.setState({
       messages: messages,
-      msg_id: msg_id
     })
   }
 

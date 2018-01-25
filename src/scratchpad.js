@@ -575,3 +575,30 @@ this.updateChannelsID = setInterval(
     })
   }, 10000
 )
+
+processMessage(channel, message) {
+  let backgroundColor = 'black'
+  let new_msg_id = this.state.msg_id + 1
+  if (this.props.channels.get(channel)) {
+    backgroundColor = { backgroundColor: this.props.channels.get(channel).color }
+  }
+
+  let new_messages = this.state.messages
+
+  new_messages.push(
+    <div style={{ ...backgroundColor }} channel={channel} key={this.state.msg_id}>
+      {message}
+    </div>
+  )
+
+  this.setState({
+    msg_id: new_msg_id,
+    messages: new_messages
+  })
+}
+
+console.log(LOCAL_STORAGE.getItem(MESSAGES))
+console.log(typeof (LOCAL_STORAGE.getItem(MESSAGES)))
+console.log(LOCAL_STORAGE.getItem(MESSAGES).size)
+console.log(jsonToArray(LOCAL_STORAGE.getItem(MESSAGES)))
+const messageArrayObj = jsonToArray(LOCAL_STORAGE.getItem(MESSAGES))

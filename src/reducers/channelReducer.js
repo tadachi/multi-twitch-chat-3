@@ -1,6 +1,6 @@
 import web_safe_colors from '../web_safe_colors'
-import {mapToJson} from '../JsonMapUtil'
-import {LOCAL_STORAGE, CHANNELS} from '../localStorageWrapper'
+import {mapToJson} from '../util/JsonMapUtil'
+import {LOCAL_STORAGE, CHANNELS} from '../util/localStorageWrapper'
 
 const max_length = web_safe_colors.length
 
