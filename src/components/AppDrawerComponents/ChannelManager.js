@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 // Redux
-import { joinChannel, leaveChannel } from '../../actions/channelActions'
+import { joinChannel, leaveChannel, addChannel } from '../../actions/channelActions'
 import { connect } from 'react-redux'
 // Material-ui
 import { withStyles } from 'material-ui/styles'
@@ -91,65 +91,23 @@ class ChannelManager extends Component {
 
     setTimeout(() => {
       if (this.state.loggedIn) {
-        console.log(jsonToMap(LOCAL_STORAGE.getItem(CHANNELS)))
-        // this.join('#TwitchPresents')
-        // this.join('#Cirno_TV')
-        // this.join('#destiny')
-        // this.join('#playhearthstone')
-        // this.join('#Avilo')
-        // this.join('#werster')
-        this.join('#artosis')
-        
-        this.join('#icarusFW')
-        this.join('#Pasky')
-        this.join('#Metako')
-        this.join('#landail')
-        this.join('#DarkSaber2k')
-        this.join('#maurice_33')
-        this.join('#Aquas')
-        this.join('#Fiercekyo')
-        this.join('#mulsqi')
-        this.join('#bafael')
-        this.join('#theboyks')
-        this.join('#Raikou')
-        this.join('#perpetualmm')
-        this.join('#Bingchang')
-        this.join('#frokenok')
-        this.join('#vultus')
-        this.join('#neohart')
-        this.join('#zetsubera')
-        this.join('#procplays')
-        this.join('#lazerlong')
-        this.join('#testrunner')
-        this.join('#jiseed')
-        this.join('#xxxindyxxx')
-        this.join('#narcissawright')
-        this.join('#Goati_')
-        this.join('#TheLCC')
-        this.join('#azureseishin')
-        this.join('#pykn')
-        this.join('#jiggeh')
-        this.join('#chuboh')
-        this.join('#UFotekkie')
-        this.join('#Ty2358')
-        this.join('#sakegeist')
-        this.join('#klaige')
-        this.join('#Go1den')
-        this.join('#capnclever')
-        this.join('#omnigamer')
-        this.join('#sylux98')
-        this.join('#swordsmankirby')
-        this.join('#Macaw45')
-        this.join('#freddeh')
-        this.join('#ghou02')
-        this.join('#tterraj42')
-        this.join('#superKing13')
-        this.join('#CavemanDCJ')
-        this.join('#yagamoth')
-        this.join('#shadowJacky')
-        this.join('#Jenja23')
+        if (LOCAL_STORAGE.getItem(CHANNELS)) {
+          console.log(jsonToMap(LOCAL_STORAGE.getItem(CHANNELS)))
+          try {
+            // const channels = jsonToMap(LOCAL_STORAGE.getItem(CHANNELS))
+            for (const [k,v] of channels.entries()) {
+              if (v.joined === true) {
+                this.join(k) // k => #TwitchPresents'...
+              } else {
+                this.props.dispatch(addChannel(k))
+              }
+            }
+          } catch (error) {
+            console.log(error)
+          }
+        }
       }
-    }, 4000)
+    }, 5000)
 
     //mtcEE events
     // Sync this.props.channels with network streams
@@ -324,7 +282,6 @@ class ChannelManager extends Component {
         console.error(err)
       });
     } else {
-      // Remove channels that are offline.
       console.log(`${channel} not found/online. Will not join.`)
     }
   }

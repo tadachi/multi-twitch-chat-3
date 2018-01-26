@@ -15,11 +15,11 @@ const store = createStore(
 
 store.subscribe(() => {
   const channels = store.getState().channelsReducer.channels
-  // console.log(jsonToMap(LOCAL_STORAGE.getItem(CHANNELS)))
+  console.log(jsonToMap(LOCAL_STORAGE.getItem(CHANNELS)))
   // console.log(channels)
-  // for (let [k,v] of channels.entries()) {
-  //   console.log(`    ${k} ${v.joined} ${v.color}`)
-  // }
+  for (let [k,v] of channels.entries()) {
+    console.log(`    ${k} ${v.joined} ${v.color}`)
+  }
 })
 
 export default store

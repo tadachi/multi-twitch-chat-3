@@ -30,19 +30,8 @@ leaveChannelEvent
 sendJoinedChannelsEvent
 */
 
-const drawerWidth = 200
+// let drawerWidth = 200
 
-let drawer = {
-  width: drawerWidth,
-  backgroundColor: 'black',
-  overflowY: 'scroll',
-  overflowX: 'hidden',
-}
-
-const expanded = {
-  left: `${drawerWidth + 2}px`,
-  // paddingLeft: '255px'
-}
 
 const theme = createMuiTheme({
   palette: {
@@ -56,10 +45,12 @@ class App extends Component {
 
     this.state = {
       drawerOpen: true,
+
       client: null,
       oAuth: null,
       user_logo: null,
       name: null,
+
     }
 
     this.options = {
@@ -74,10 +65,27 @@ class App extends Component {
         password: ''
       },
     }
+
+    this.drawerWidth = 200
+
+    this.drawer = {
+      width: this.drawerWidth,
+      backgroundColor: 'black',
+      overflowY: 'scroll',
+      overflowX: 'hidden',
+    }
+
+    this.expanded = {
+      left: `${this.drawerWidth + 2}px`,
+      // paddingLeft: '255px'
+    }
+
+
   }
 
   handleDrawerOpen() {
     this.setState({ drawerOpen: !this.state.drawerOpen });
+    this.state.drawerOpen ? this.drawerWidth = 200 : this.drawerWidth = 0
   }
 
   componentDidMount() {
@@ -122,31 +130,30 @@ class App extends Component {
   }
 
   render() {
-    const onExpanded = this.state.drawerOpen === true ? expanded : ''
+    const onExpanded = this.state.drawerOpen === true ? this.expanded : ''
 
     const login = this.state.oAuth ?
       null :
       <LoginButton client_id={client_id} style={loginButton} color={'primary'} />
 
+    const user = this.state.oAuth ?
+      <UserPaper name={this.state.name} img={this.state.user_logo} /> :
+      null
 
     const channelManager = this.state.client ?
       <ChannelManager client={this.state.client} client_id={client_id} oAuth={this.state.oAuth} mtcEE={MultiTwitchChatEE} loggedIn={true} /> :
       null
 
     const chat = this.state.client ?
-      <Chat style={{ ...onExpanded }} client={this.state.client} mtcEE={MultiTwitchChatEE} drawerWidth={drawerWidth} /> :
-      null
-
-    const user = this.state.oAuth ?
-      <UserPaper name={this.state.name} img={this.state.user_logo} /> :
+      <Chat style={{ ...onExpanded }} client={this.state.client} mtcEE={MultiTwitchChatEE} drawerWidth={this.drawerWidth} /> :
       null
 
     return (
       <MuiThemeProvider theme={theme}>
         <div id={'container'} >
-          <AppDrawer style={drawer} open={this.state.drawerOpen}>
+          <AppDrawer style={this.drawer} open={this.state.drawerOpen}>
             <Paper style={paperStyle}>
-              <Clock />
+              <Clock style={{ textAlign: 'center' }} />
               {login}
               {user}
             </Paper>

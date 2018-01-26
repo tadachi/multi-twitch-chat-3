@@ -17,6 +17,7 @@ import twitch_emotes from '../emotes/twitch_emotes'
 import bttv_emotes from '../emotes/bttv_emotes'
 import { LOCAL_STORAGE, MESSAGES, } from '../util/localStorageWrapper'
 import { arrayToJson, jsonToArray, } from '../util/JsonMapUtil'
+
 String.prototype.removeHashtag = function () {
   return this.replace('#', "").toLowerCase();
 }

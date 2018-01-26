@@ -46,4 +46,6 @@ for (const p of [800, 900]) {
   colors.push(orange[p])
 }
 
+colors.push(purple['A200'])
+
 export default colors

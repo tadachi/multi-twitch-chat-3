@@ -7,8 +7,7 @@ const style = {
 }
 
 const logo = {
-  width: '50px',
-  height: '50px',
+  width: '100%',
 }
 
 // const name = {
@@ -32,7 +31,7 @@ class UserPaper extends React.Component {
             ref='user_logo'
             />
         </div>
-        <div>{this.props.name}</div>
+        {/* <div>{this.props.name}</div> */}
         {this.props.children}
       </Paper>
     )
