@@ -94,7 +94,7 @@ class ChannelManager extends Component {
         if (LOCAL_STORAGE.getItem(CHANNELS)) {
           console.log(jsonToMap(LOCAL_STORAGE.getItem(CHANNELS)))
           try {
-            // const channels = jsonToMap(LOCAL_STORAGE.getItem(CHANNELS))
+            const channels = jsonToMap(LOCAL_STORAGE.getItem(CHANNELS))
             for (const [k,v] of channels.entries()) {
               if (v.joined === true) {
                 this.join(k) // k => #TwitchPresents'...
