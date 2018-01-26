@@ -141,7 +141,6 @@ class App extends Component {
       <UserPaper name={this.state.name} img={this.state.user_logo} /> :
       null
 
-
     return (
       <MuiThemeProvider theme={theme}>
         <div id={'container'} >

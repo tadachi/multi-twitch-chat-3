@@ -602,3 +602,7 @@ console.log(typeof (LOCAL_STORAGE.getItem(MESSAGES)))
 console.log(LOCAL_STORAGE.getItem(MESSAGES).size)
 console.log(jsonToArray(LOCAL_STORAGE.getItem(MESSAGES)))
 const messageArrayObj = jsonToArray(LOCAL_STORAGE.getItem(MESSAGES))
+
+const logOut = this.state.oAuth ?
+<div><a href={`https://api.twitch.tv/kraken/oauth2/revoke?client_id=${client_id}&token=${this.state.oAuth}`}>Log Out</a></div> :
+null

@@ -5,11 +5,12 @@ import moment from 'moment'
 import axios from 'axios'
 import '../App.css'
 
+// Components
+import ChatMenu from './ChatMenu'
+
 // Material-ui
-import Select from 'material-ui/Select';
-import Settings from 'material-ui-icons/Settings'
-import ClearAll from 'material-ui-icons/ClearAll'
-import { grey600 } from 'material-ui/colors';
+import Select from 'material-ui/Select'
+import { blueGrey } from 'material-ui/colors'
 
 // Utility
 import twitch_emotes from '../emotes/twitch_emotes'
@@ -80,16 +81,20 @@ class Chat extends Component {
     super(props)
 
     this.state = {
+      // messages
       messages: [],
       your_messages: [],
+      // UI
       scrollToEnd: true,
       width: window.innerWidth,
       height: window.innerHeight - 10,
+      chatMenuOpen: false,
+      // Channels
       channel: 0,
       joined_channels: []
     }
     this.msg_id = 0,
-      this.messageCache = []
+    this.messageCache = []
     this.regex_channel = /\/\#\S+|\S+\ +/ //['/#Tod', /#Tod    '] OK ['#Tod', '#Tod  '] Not OK.
   }
 
@@ -135,10 +140,9 @@ class Chat extends Component {
 
     this.truncateTimerID = setInterval(
       () => {
-        console.log(this.state.messages)
         this.truncateMessages()
       },
-      100000
+      60000
     )
 
     let m = (channel, userstate, message, time) => {
@@ -155,13 +159,13 @@ class Chat extends Component {
     }
 
     let processMessage = (channel, message, opacity = 1) => {
-      let color = grey600
+      let color = blueGrey[900]
       this.msg_id = this.msg_id + 1
       this.props.channels.get(channel) ?
-        color = { backgroundColor: this.props.channels.get(channel).color } : 
-        color = { backgroundColor: grey600 }
+        color = this.props.channels.get(channel).color :
+        color = blueGrey[900]
 
-      return <div style={{ ...color, opacity: opacity }} channel={channel} key={this.msg_id}>
+      return <div style={{ backgroundColor: color, opacity: opacity }} channel={channel} key={this.msg_id}>
         {message}
       </div>
     }
@@ -277,8 +281,8 @@ class Chat extends Component {
 
   truncateMessages() {
     const truncated_messages = this.state.messages
-    if (truncated_messages.length > 5000) {
-      truncated_messages.splice(0, 250)
+    if (truncated_messages.length > 400) {
+      truncated_messages.splice(0, 300)
       console.log(truncated_messages)
 
       this.setState({
@@ -405,11 +409,16 @@ class Chat extends Component {
     })
   }
 
+  handleChatMenuOpen() {
+    console.log('test')
+    this.setState({ chatMenuOpen: !this.state.chatMenuOpen });
+  }
+
   render() {
     const drawerWidth = this.props.drawerWidth + 20
     const w = this.state.width - drawerWidth
     const h = this.state.height
-    const chatH = 55
+    const chatH = 45
 
     const channelSelect = this.state.joined_channels.length > 0 ?
       <Select onChange={this.handleChange('channel')} style={{ color: 'white', width: '100%', }} value={this.state.channel} native>
@@ -428,7 +437,7 @@ class Chat extends Component {
 
     return (
       <div style={{ ...this.props.style, ...{ position: 'relative', width: `${w}px`, height: `${h}px`, overflowX: 'hidden', overflowY: 'hidden', border: '1px solid white', } }}>
-        <div style={{ width: `${w}`, height: `${h - chatH - 30}px`, overflowY: 'scroll', overflowX: 'hidden', }} ref={(el) => { this.chatScroll = el }} id={'chat'}>
+        <div style={{ borderBottom: '1px solid white', width: `${w}`, height: `${h - chatH - 30}px`, overflowY: 'scroll', overflowX: 'hidden', }} ref={(el) => { this.chatScroll = el }} id={'chat'}>
           <div>
             {this.state.messages}
           </div>
@@ -448,17 +457,17 @@ class Chat extends Component {
           display: 'grid',
           gridTemplateColumns: '10px 25px 135px 25px 1fr',
           gridColumnGap: '1rem',
-          alignItems: 'center',
+          marginTop: '5px',
+          // border: '1px solid white'
         }}>
           <div></div>
-          <div>
-            {/* <Settings /> */}
-          </div>
-          <div>
+          <div></div>
+          <div style={{ marginTop: '5px' }}>
             {channelSelect}
           </div>
-          <div>
-            <ClearAll onClick={this.clearChat.bind(this)} />
+          <div style={{ marginTop: '13px' }}>
+            <ChatMenu clearChat={this.clearChat.bind(this)}/>
+            {/* <ClearAll onClick={this.clearChat.bind(this)} /> */}
           </div>
           <div>
             {textAreaChat}
@@ -474,8 +483,6 @@ Chat.defaultProps = {
   twitch_emotes_map: twitch_emotes_map,
   bttv_emotes_map: bttv_emotes_map,
 };
-
-
 
 function mapStateToChat(state) {
   return {

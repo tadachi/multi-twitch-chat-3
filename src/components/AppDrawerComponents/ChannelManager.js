@@ -98,7 +98,8 @@ class ChannelManager extends Component {
         // this.join('#playhearthstone')
         // this.join('#Avilo')
         // this.join('#werster')
-
+        this.join('#artosis')
+        
         this.join('#icarusFW')
         this.join('#Pasky')
         this.join('#Metako')
@@ -110,7 +111,6 @@ class ChannelManager extends Component {
         this.join('#mulsqi')
         this.join('#bafael')
         this.join('#theboyks')
-        this.join('#artosis')
         this.join('#Raikou')
         this.join('#perpetualmm')
         this.join('#Bingchang')
@@ -147,6 +147,7 @@ class ChannelManager extends Component {
         this.join('#CavemanDCJ')
         this.join('#yagamoth')
         this.join('#shadowJacky')
+        this.join('#Jenja23')
       }
     }, 4000)
 
@@ -178,13 +179,11 @@ class ChannelManager extends Component {
         }
       }
     })
-    // this.props.mtcEE.on('sendJoinedChannelsEvent', (joined_channels) => {
-    // })
   }
 
   componentWillUnmount() {
     clearInterval(this.updateStreamersTimerID);
-    // clearInterval(this.updateStreamersCachedTimerID);
+    clearInterval(this.updateStreamersCachedTimerID);
   }
 
   async updateStreamers() {
