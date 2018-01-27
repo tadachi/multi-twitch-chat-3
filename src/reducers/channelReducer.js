@@ -15,9 +15,7 @@ const channelReducer = (state = { channels: new Map() }, actions) => {
 
       // Random color upon joining again.
 
-      const i = [randomIntFromInterval(0, max_length)]
-      console.log(i + ' ' + max_length)
-      const new_color = web_safe_colors[randomIntFromInterval(0, max_length)]
+      const new_color = web_safe_colors[randomIntFromInterval(0, max_length-1)]
       new_channels = new_channels.set(actions.channel, { joined: true, color: new_color })
       // if (state.channels.get(actions.channel)) { // e.g '#werster, undefined, etc
 
@@ -32,9 +30,10 @@ const channelReducer = (state = { channels: new Map() }, actions) => {
     }
     case 'ADD_CHANNEL': {
       let new_channels = state.channels
-      const new_color = web_safe_colors[randomIntFromInterval(0, max_length)]
+      const new_color = web_safe_colors[randomIntFromInterval(0, max_length-1)]
       new_channels = new_channels.set(actions.channel, { joined: false, color: new_color })
       state = { channels: new_channels }
+      break
     }
     case 'LEAVE_CHANNEL': {
       let new_channels = state.channels

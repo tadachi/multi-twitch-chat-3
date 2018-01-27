@@ -94,7 +94,7 @@ class Chat extends Component {
       channel: 0,
       joined_channels: []
     }
-    this.msg_id = 0,
+    this.msg_id = 0
     this.messageCache = []
     this.regex_channel = /\/\#\S+|\S+\ +/ //['/#Tod', /#Tod    '] OK ['#Tod', '#Tod  '] Not OK.
   }
@@ -143,7 +143,7 @@ class Chat extends Component {
       () => {
         this.truncateMessages()
       },
-      60000
+      120000
     )
 
     let m = (channel, userstate, message, time) => {
@@ -282,8 +282,8 @@ class Chat extends Component {
 
   truncateMessages() {
     const truncated_messages = this.state.messages
-    if (truncated_messages.length > 400) {
-      truncated_messages.splice(0, 300)
+    if (truncated_messages.length > 750) {
+      truncated_messages.splice(0, 350)
       console.log(truncated_messages)
 
       this.setState({
@@ -330,7 +330,7 @@ class Chat extends Component {
 
       this.props.client.say(channel, message).then((data) => {
         this.scrollToBottom()
-        console.log(`${channel} ${message}`)
+        // console.log(`${channel} ${message}`)
       }).catch((err) => {
         console.log(err)
       });

@@ -534,6 +534,7 @@ import React, { Component } from 'react'
 import Button from 'material-ui/Button'
 import axios from 'axios'
 import { connect } from 'react-redux'
+import { CommunicationDialerSip } from 'material-ui/svg-icons';
 
 class LoginButton extends Component {
   constructor(props) {

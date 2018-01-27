@@ -10,8 +10,8 @@ import AddCircleOutline from 'material-ui-icons/AddCircleOutline'
 import HighlightOff from 'material-ui-icons/HighlightOff'
 // Utilties
 import axios from 'axios'
-import {jsonToMap} from '../../util/JsonMapUtil'
-import {LOCAL_STORAGE, CHANNELS} from '../../util/localStorageWrapper'
+import { jsonToMap } from '../../util/JsonMapUtil'
+import { LOCAL_STORAGE, CHANNELS } from '../../util/localStorageWrapper'
 import moment from 'moment'
 
 String.prototype.clean = function () {
@@ -24,13 +24,13 @@ const styles = {
     height: '15px',
   },
   joinIcon: {
+    color: 'white',
     width: '20px',
-    height: '20px',
+
   },
   leaveIcon: {
     color: 'red',
     width: '20px',
-    height: '20px',
   }
 }
 
@@ -95,7 +95,7 @@ class ChannelManager extends Component {
           console.log(jsonToMap(LOCAL_STORAGE.getItem(CHANNELS)))
           try {
             const channels = jsonToMap(LOCAL_STORAGE.getItem(CHANNELS))
-            for (const [k,v] of channels.entries()) {
+            for (const [k, v] of channels.entries()) {
               if (v.joined === true) {
                 this.join(k) // k => #TwitchPresents'...
               } else {
@@ -112,13 +112,13 @@ class ChannelManager extends Component {
     //mtcEE events
     // Sync this.props.channels with network streams
     this.props.mtcEE.on('updateStreamersByNetworkEvent', (streams) => {
-      if(this.props.channels) {
+      if (this.props.channels) {
         // console.log(this.props.channels)
         for (const [channel_key, value] of this.props.channels.entries()) {
           const joined = value.joined
-          if (!joined) {
-            console.log(channel_key + ' ' + joined)
-          }
+          // if (!joined) {
+          //   console.log(channel_key + ' ' + joined)
+          // }
           let stay = true
           for (const stream of streams) {
             if (channel_key === stream) {
@@ -129,7 +129,7 @@ class ChannelManager extends Component {
               stay = false
             }
           }
-          if (stay === false) {
+          if (stay === false && joined === true) {
             console.log(joined)
             console.log(`[${moment().format('h:mm:ss')}] Leaving ${channel_key} because it went offline`)
             this.leave(channel_key.clean())
@@ -154,9 +154,6 @@ class ChannelManager extends Component {
     }
 
     const req = await axios.request(config)
-      .catch(function (err) {
-        return undefined
-      })
       .then((response) => {
         let new_streams = new Map()
 
@@ -211,7 +208,11 @@ class ChannelManager extends Component {
         this.props.mtcEE.emitEvent(`updateStreamersByNetworkEvent`, [Array.from(new_streams.keys())]);
 
         return this.state.streams
+      }).catch(function (err) {
+        console.log(err)
+        return undefined
       })
+
     return req
   }
 

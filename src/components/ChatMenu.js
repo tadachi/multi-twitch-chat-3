@@ -12,7 +12,6 @@ import Dialog, {
 import Settings from 'material-ui-icons/Settings'
 import Delete from 'material-ui-icons/Delete';
 import Icon from 'material-ui/Icon';
-import { withStyles } from 'material-ui/styles';
 // Util
 import { LOCAL_STORAGE, CHANNELS } from '../util/localStorageWrapper'
 import { jsonToMap } from '../util/JsonMapUtil'
@@ -96,4 +95,4 @@ function mapStateToChatMenu(state) {
 
 ChatMenu = connect(mapStateToChatMenu)(ChatMenu)
 
-export default (ChatMenu)
+export default ChatMenu
