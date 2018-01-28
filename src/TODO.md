@@ -1,6 +1,8 @@
 # List of TODOS
 
-* Register moderator Commands so spam can be deleted
+* Register moderator commands so spam can be deleted, etc.
+
+* OnHover of a message's emote, show the emote large, its origin (twitch, BTTV, FFZ) and its code (PogChamp)
 
 * Color picker
     * Show on ChannelManager channel cards onClick event
@@ -16,3 +18,7 @@
     * These channels are stored in LocalStorage
 
 * Catch all app stopping errors 
+
+* Support subscriber emotes
+
+* Register urls in chat so you can click and visit them.

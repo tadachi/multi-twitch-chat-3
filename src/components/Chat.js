@@ -371,8 +371,7 @@ class Chat extends Component {
   }
 
   handleChange = name => event => {
-    // console.log(event.target.value)
-    this.setState({ [name]: event.target.value });
+    this.setState({ [name]: parseInt(event.target.value) });
   };
 
   handleChatScroll() {
@@ -422,7 +421,7 @@ class Chat extends Component {
     const chatH = 45
 
     const channelSelect = this.state.joined_channels.length > 0 ?
-      <Select onChange={this.handleChange('channel')} style={{ color: 'white', width: '100%', }} value={this.state.channel} native>
+      <Select onChange={this.handleChange('channel')} style={{ color: 'white', width: '100%', }} value={parseInt(this.state.channel)} native>
         {this.state.joined_channels}
       </Select> :
       null

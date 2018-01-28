@@ -109,16 +109,12 @@ class ChannelManager extends Component {
       }
     }, 5000)
 
-    //mtcEE events
+    // mtcEE events
     // Sync this.props.channels with network streams
     this.props.mtcEE.on('updateStreamersByNetworkEvent', (streams) => {
       if (this.props.channels) {
-        // console.log(this.props.channels)
         for (const [channel_key, value] of this.props.channels.entries()) {
           const joined = value.joined
-          // if (!joined) {
-          //   console.log(channel_key + ' ' + joined)
-          // }
           let stay = true
           for (const stream of streams) {
             if (channel_key === stream) {
@@ -130,7 +126,6 @@ class ChannelManager extends Component {
             }
           }
           if (stay === false && joined === true) {
-            console.log(joined)
             console.log(`[${moment().format('h:mm:ss')}] Leaving ${channel_key} because it went offline`)
             this.leave(channel_key.clean())
           }
